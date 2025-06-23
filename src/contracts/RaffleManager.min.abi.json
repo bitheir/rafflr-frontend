@@ -1,0 +1,14 @@
+[
+  { "anonymous": false, "inputs": [
+    { "indexed": true, "internalType": "address", "name": "raffle", "type": "address" }
+  ], "name": "RaffleRegistered", "type": "event" },
+  {
+    "inputs": [],
+    "name": "getAllRaffles",
+    "outputs": [
+      { "internalType": "address[]", "name": "", "type": "address[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+] 

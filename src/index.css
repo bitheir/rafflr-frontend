@@ -1,0 +1,8 @@
+/* Global font configuration for Raffle Protocol Frontend */
+
+/* Ensure proper font rendering */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
