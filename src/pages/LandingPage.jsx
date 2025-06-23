@@ -193,20 +193,35 @@ const LandingPage = () => {
   const { contracts, getContractInstance } = useContract();
   const [raffles, setRaffles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Fetch raffles from contracts
   useEffect(() => {
     const fetchRaffles = async () => {
+      if (!connected) {
+        setRaffles([]);
+        setError('Please connect your wallet to view raffles');
+        return;
+      }
+
       if (!contracts.raffleManager) {
         console.log('RaffleManager contract not available');
+        setError('Contracts not initialized. Please try refreshing the page.');
         return;
       }
 
       setLoading(true);
+      setError(null);
       try {
         // Get all registered raffles from the RaffleManager using the new getAllRaffles function
         const registeredRaffles = await contracts.raffleManager.getAllRaffles();
         
+        if (registeredRaffles.length === 0) {
+          setRaffles([]);
+          setError('No raffles found on the blockchain');
+          return;
+        }
+
         const rafflePromises = registeredRaffles.map(async (raffleAddress) => {
           try {
             // Get raffle contract instance using the contract context
@@ -309,27 +324,13 @@ const LandingPage = () => {
         const validRaffles = raffleData.filter(raffle => raffle !== null);
         
         setRaffles(validRaffles);
+        if (validRaffles.length === 0) {
+          setError('No valid raffles found on the blockchain');
+        }
       } catch (error) {
         console.error('Error fetching raffles:', error);
-        // Fallback to mock data if contract interaction fails
-        setRaffles([
-          {
-            id: '1',
-            name: 'NFT Art Raffle',
-            address: '0x1234567890123456789012345678901234567890',
-            creator: '0x1234567890123456789012345678901234567890',
-            startTime: Math.floor(Date.now() / 1000) - 7200,
-            duration: 86400,
-            ticketPrice: ethers.utils.parseEther('0.01'),
-            ticketLimit: 100,
-            ticketsSold: 45,
-            winnersCount: 3,
-            maxTicketsPerParticipant: 5,
-            hasPrize: true,
-            prizeCollection: '0x9876543210987654321098765432109876543210',
-            state: 'active'
-          }
-        ]);
+        setError('Failed to fetch raffles from blockchain. Please check your network connection and try again.');
+        setRaffles([]);
       } finally {
         setLoading(false);
       }
@@ -341,7 +342,7 @@ const LandingPage = () => {
     const interval = setInterval(fetchRaffles, 30000);
 
     return () => clearInterval(interval);
-  }, [contracts, getContractInstance]);
+  }, [contracts, getContractInstance, connected]);
 
   // Categorize raffles by state
   const categorizeRaffles = () => {
@@ -363,12 +364,65 @@ const LandingPage = () => {
 
   const { pending, active, ended, drawing, completed } = categorizeRaffles();
 
+  // Show wallet connection prompt if not connected
+  if (!connected) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold mb-4">Welcome to Raffle Protocol</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Discover exciting raffles, win amazing prizes, and be part of the decentralized raffle ecosystem.
+          </p>
+        </div>
+        
+        <div className="text-center py-16">
+          <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-2xl font-semibold mb-2">Connect Your Wallet</h3>
+          <p className="text-muted-foreground mb-6">
+            Please connect your wallet to view and interact with raffles on the blockchain.
+          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
+            <p className="text-sm text-blue-800">
+              <strong>Note:</strong> Make sure you're connected to the Sepolia testnet to view the deployed raffles.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg text-muted-foreground">Loading raffles...</p>
+          <p className="text-lg text-muted-foreground">Loading raffles from blockchain...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error message if there's an error
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold mb-4">Welcome to Raffle Protocol</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Discover exciting raffles, win amazing prizes, and be part of the decentralized raffle ecosystem.
+          </p>
+        </div>
+        
+        <div className="text-center py-16">
+          <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-2xl font-semibold mb-2">Unable to Load Raffles</h3>
+          <p className="text-muted-foreground mb-6">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -389,12 +443,12 @@ const LandingPage = () => {
       <RaffleSection title="Completed Raffles" raffles={completed} icon={Ticket} />
       <RaffleSection title="Ended Raffles" raffles={ended} icon={Clock} />
 
-      {raffles.length === 0 && !loading && (
+      {raffles.length === 0 && !loading && !error && (
         <div className="text-center py-16">
           <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-2xl font-semibold mb-2">No Raffles Available</h3>
           <p className="text-muted-foreground">
-            There are currently no raffles available. Check back later or create your own!
+            There are currently no raffles available on the blockchain. Check back later or create your own!
           </p>
         </div>
       )}
