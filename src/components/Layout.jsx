@@ -32,8 +32,8 @@ const Header = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
               <Link to="/" className="flex items-center gap-3">
-                <img src="/logo.png" alt="Raffle Protocol Logo" className="h-8 w-8" style={{ backgroundColor: 'transparent' }} />
-                <span className="text-xl font-bold" style={{ fontFamily: 'Orbitron, monospace' }}>Raffle Protocol</span>
+                <img src="/logo.png" alt="Rafflr Logo" className="h-8 w-8" style={{ backgroundColor: 'transparent' }} />
+                <span className="text-xl font-bold" style={{ fontFamily: 'Orbitron, monospace' }}>Rafflr</span>
               </Link>
             </div>
             

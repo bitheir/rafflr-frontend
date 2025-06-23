@@ -369,7 +369,7 @@ const LandingPage = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-4">Welcome to Raffle Protocol</h1>
+          <h1 className="text-4xl font-bold mb-4">Welcome to Rafflr</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Discover exciting raffles, win amazing prizes, and be part of the decentralized raffle ecosystem.
           </p>
@@ -407,7 +407,7 @@ const LandingPage = () => {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-4">Welcome to Raffle Protocol</h1>
+          <h1 className="text-4xl font-bold mb-4">Welcome to Rafflr</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Discover exciting raffles, win amazing prizes, and be part of the decentralized raffle ecosystem.
           </p>
@@ -431,7 +431,7 @@ const LandingPage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Raffle Protocol</h1>
+        <h1 className="text-4xl font-bold mb-4">Welcome to Rafflr</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           Discover exciting raffles, win amazing prizes, and be part of the decentralized raffle ecosystem.
         </p>

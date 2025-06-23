@@ -1,6 +1,6 @@
-# Raffle Protocol Frontend - Multi-Page Application
+# Rafflr Frontend - Multi-Page Application
 
-A modern, production-grade React application for the Raffle Protocol, featuring a complete multi-page architecture with dedicated pages for different user interactions.
+A modern, production-grade React application for Rafflr, featuring a complete multi-page architecture with dedicated pages for different user interactions.
 
 ## 🚀 Features
 
