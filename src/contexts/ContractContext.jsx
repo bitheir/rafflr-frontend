@@ -105,11 +105,69 @@ export const ContractProvider = ({ children }) => {
     }
   };
 
+  // Add event subscription system
+  const eventListeners = React.useRef({});
+
+  // Helper to register event listeners
+  const onContractEvent = (event, callback) => {
+    if (!eventListeners.current[event]) {
+      eventListeners.current[event] = [];
+    }
+    eventListeners.current[event].push(callback);
+    // Return unsubscribe function
+    return () => {
+      eventListeners.current[event] = eventListeners.current[event].filter(cb => cb !== callback);
+    };
+  };
+
+  // Emit event to all listeners
+  const emitEvent = (event, ...args) => {
+    if (eventListeners.current[event]) {
+      eventListeners.current[event].forEach(cb => cb(...args));
+    }
+  };
+
+  // Set up contract event listeners
+  useEffect(() => {
+    if (!connected || !signer || !contracts.raffleDeployer) return;
+
+    // --- RaffleCreated ---
+    const handleRaffleCreated = (raffle, creator) => {
+      emitEvent('RaffleCreated', { raffle, creator });
+    };
+    contracts.raffleDeployer.on('RaffleCreated', handleRaffleCreated);
+
+    // --- WinnersSelected ---
+    if (contracts.raffle) {
+      const handleWinnersSelected = (winners) => {
+        emitEvent('WinnersSelected', { winners });
+      };
+      contracts.raffle.on('WinnersSelected', handleWinnersSelected);
+
+      // --- PrizeClaimed ---
+      const handlePrizeClaimed = (winner, tokenId) => {
+        emitEvent('PrizeClaimed', { winner, tokenId });
+      };
+      contracts.raffle.on('PrizeClaimed', handlePrizeClaimed);
+
+      return () => {
+        contracts.raffle.off('WinnersSelected', handleWinnersSelected);
+        contracts.raffle.off('PrizeClaimed', handlePrizeClaimed);
+      };
+    }
+
+    // Clean up
+    return () => {
+      contracts.raffleDeployer.off('RaffleCreated', handleRaffleCreated);
+    };
+  }, [connected, signer, contracts.raffleDeployer, contracts.raffle]);
+
   const value = {
     contracts,
     getContractInstance,
     executeTransaction,
-    executeCall
+    executeCall,
+    onContractEvent,
   };
 
   return (

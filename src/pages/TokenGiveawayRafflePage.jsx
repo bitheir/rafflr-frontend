@@ -7,103 +7,131 @@ import RaffleCard from './LandingPage';
 
 const TokenGiveawayRafflePage = () => {
   const { connected } = useWallet();
-  const { contracts, getContractInstance } = useContract();
+  const { contracts, getContractInstance, onContractEvent } = useContract();
   const [raffles, setRaffles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [backgroundLoading, setBackgroundLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchRaffles = async () => {
-      if (!connected) {
-        setRaffles([]);
-        setError('Please connect your wallet to view raffles');
-        return;
-      }
-      if (!contracts.raffleManager) {
-        setError('Contracts not initialized. Please try refreshing the page.');
-        return;
-      }
+  const fetchRaffles = React.useCallback(async (isBackground = false) => {
+    if (!connected) {
+      setRaffles([]);
+      setError('Please connect your wallet to view raffles');
+      return;
+    }
+    if (!contracts.raffleManager) {
+      setError('Contracts not initialized. Please try refreshing the page.');
+      return;
+    }
+    if (isBackground) {
+      setBackgroundLoading(true);
+    } else {
       setLoading(true);
-      setError(null);
-      try {
-        const registeredRaffles = await contracts.raffleManager.getAllRaffles ? await contracts.raffleManager.getAllRaffles() : await contracts.raffleManager.getRegisteredRaffles();
-        if (!registeredRaffles || registeredRaffles.length === 0) {
-          setRaffles([]);
-          setError('No raffles found on the blockchain');
-          return;
-        }
-        const rafflePromises = registeredRaffles.map(async (raffleAddress) => {
-          try {
-            const raffleContract = getContractInstance(raffleAddress, 'raffle');
-            if (!raffleContract) return null;
-            const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrized, prizeCollection, state] = await Promise.all([
-              raffleContract.name(),
-              raffleContract.creator(),
-              raffleContract.startTime(),
-              raffleContract.duration(),
-              raffleContract.ticketPrice(),
-              raffleContract.ticketLimit(),
-              raffleContract.winnersCount(),
-              raffleContract.maxTicketsPerParticipant(),
-              raffleContract.isPrized(),
-              raffleContract.prizeCollection(),
-              raffleContract.state()
-            ]);
-            let ticketsSold = 0;
-            try {
-              let count = 0;
-              while (true) {
-                try {
-                  await raffleContract.participants(count);
-                  count++;
-                } catch {
-                  break;
-                }
-              }
-              ticketsSold = count;
-            } catch {}
-            let raffleState;
-            if (state === 0) raffleState = 'pending';
-            else if (state === 1) raffleState = 'active';
-            else if (state === 2) raffleState = 'drawing';
-            else if (state === 3 || state === 4) raffleState = 'completed';
-            else if (state === 5) raffleState = 'ended';
-            else raffleState = 'ended';
-            return {
-              id: raffleAddress,
-              name,
-              address: raffleAddress,
-              creator,
-              startTime: startTime.toNumber(),
-              duration: duration.toNumber(),
-              ticketPrice,
-              ticketLimit: ticketLimit.toNumber(),
-              ticketsSold,
-              winnersCount: winnersCount.toNumber(),
-              maxTicketsPerParticipant: maxTicketsPerParticipant.toNumber(),
-              isPrized,
-              prizeCollection: !!isPrized ? prizeCollection : null,
-              state: raffleState
-            };
-          } catch {
-            return null;
-          }
-        });
-        const raffleData = await Promise.all(rafflePromises);
-        const validRaffles = raffleData.filter(r => r && r.isPrized && !r.prizeCollection);
-        setRaffles(validRaffles);
-        if (validRaffles.length === 0) setError('No token giveaway raffles found.');
-      } catch (e) {
-        setError('Failed to fetch raffles');
+    }
+    setError(null);
+    try {
+      const registeredRaffles = await contracts.raffleManager.getAllRaffles ? await contracts.raffleManager.getAllRaffles() : await contracts.raffleManager.getRegisteredRaffles();
+      if (!registeredRaffles || registeredRaffles.length === 0) {
         setRaffles([]);
-      } finally {
+        setError('No raffles found on the blockchain');
+        return;
+      }
+      const rafflePromises = registeredRaffles.map(async (raffleAddress) => {
+        try {
+          const raffleContract = getContractInstance(raffleAddress, 'raffle');
+          if (!raffleContract) return null;
+          const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrized, prizeCollection, state] = await Promise.all([
+            raffleContract.name(),
+            raffleContract.creator(),
+            raffleContract.startTime(),
+            raffleContract.duration(),
+            raffleContract.ticketPrice(),
+            raffleContract.ticketLimit(),
+            raffleContract.winnersCount(),
+            raffleContract.maxTicketsPerParticipant(),
+            raffleContract.isPrized(),
+            raffleContract.prizeCollection(),
+            raffleContract.state()
+          ]);
+          let ticketsSold = 0;
+          try {
+            let count = 0;
+            while (true) {
+              try {
+                await raffleContract.participants(count);
+                count++;
+              } catch {
+                break;
+              }
+            }
+            ticketsSold = count;
+          } catch {}
+          let raffleState;
+          if (state === 0) raffleState = 'pending';
+          else if (state === 1) raffleState = 'active';
+          else if (state === 2) raffleState = 'drawing';
+          else if (state === 3 || state === 4) raffleState = 'completed';
+          else if (state === 5) raffleState = 'ended';
+          else raffleState = 'ended';
+          return {
+            id: raffleAddress,
+            name,
+            address: raffleAddress,
+            creator,
+            startTime: startTime.toNumber(),
+            duration: duration.toNumber(),
+            ticketPrice,
+            ticketLimit: ticketLimit.toNumber(),
+            ticketsSold,
+            winnersCount: winnersCount.toNumber(),
+            maxTicketsPerParticipant: maxTicketsPerParticipant.toNumber(),
+            isPrized,
+            prizeCollection: !!isPrized ? prizeCollection : null,
+            state: raffleState
+          };
+        } catch {
+          return null;
+        }
+      });
+      const raffleData = await Promise.all(rafflePromises);
+      const validRaffles = raffleData.filter(r => r && r.isPrized && !r.prizeCollection);
+      setRaffles(validRaffles);
+      if (validRaffles.length === 0) setError('No token giveaway raffles found.');
+    } catch (e) {
+      setError('Failed to fetch raffles');
+      setRaffles([]);
+    } finally {
+      if (isBackground) {
+        setBackgroundLoading(false);
+      } else {
         setLoading(false);
       }
-    };
-    fetchRaffles();
-    const interval = setInterval(fetchRaffles, 30000);
-    return () => clearInterval(interval);
+    }
   }, [contracts, getContractInstance, connected]);
+
+  useEffect(() => {
+    fetchRaffles();
+    const interval = setInterval(() => fetchRaffles(true), 30000);
+    return () => clearInterval(interval);
+  }, [fetchRaffles]);
+
+  useEffect(() => {
+    if (!onContractEvent) return;
+    const unsubRaffleCreated = onContractEvent('RaffleCreated', () => {
+      fetchRaffles(true);
+    });
+    const unsubWinnersSelected = onContractEvent('WinnersSelected', () => {
+      fetchRaffles(true);
+    });
+    const unsubPrizeClaimed = onContractEvent('PrizeClaimed', () => {
+      fetchRaffles(true);
+    });
+    return () => {
+      unsubRaffleCreated && unsubRaffleCreated();
+      unsubWinnersSelected && unsubWinnersSelected();
+      unsubPrizeClaimed && unsubPrizeClaimed();
+    };
+  }, [onContractEvent, fetchRaffles]);
 
   if (!connected) {
     return (
