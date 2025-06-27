@@ -67,7 +67,7 @@ const RaffleCard = ({ raffle }) => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6 hover:shadow-lg transition-shadow flex flex-col h-full">
+    <div className="bg-card border border-border rounded-lg p-4 hover:shadow-lg transition-shadow flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold truncate flex-1 mr-2">{raffle.name}</h3>
         {getStatusBadge()}
