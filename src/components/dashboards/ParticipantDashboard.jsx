@@ -80,7 +80,7 @@ const RaffleCard = ({ raffle, onPurchaseTickets, onClaimPrize, onClaimRefund }) 
           <span className="text-muted-foreground">Time Remaining:</span>
           <span>{timeRemaining}</span>
         </div>
-        {raffle.hasPrize && (
+        {!!raffle.isPrized && (
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Prize Collection:</span>
             <span className="font-mono">{raffle.prizeCollection?.slice(0, 10)}...</span>
@@ -102,7 +102,7 @@ const RaffleCard = ({ raffle, onPurchaseTickets, onClaimPrize, onClaimRefund }) 
           </button>
         )}
         
-        {raffle.state === 'completed' && raffle.hasPrize && (
+        {raffle.state === 'completed' && !!raffle.isPrized && (
           <button
             onClick={() => onClaimPrize(raffle)}
             className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
@@ -221,7 +221,7 @@ const ParticipantDashboard = () => {
           ticketsSold: 45,
           winnersCount: 3,
           maxTicketsPerParticipant: 5,
-          hasPrize: true,
+          isPrized: true,
           prizeCollection: '0x9876543210987654321098765432109876543210',
           state: 'active'
         },
@@ -236,7 +236,7 @@ const ParticipantDashboard = () => {
           ticketsSold: 0,
           winnersCount: 5,
           maxTicketsPerParticipant: 10,
-          hasPrize: false,
+          isPrized: false,
           state: 'pending'
         }
       ]);

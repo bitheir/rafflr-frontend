@@ -1,6 +1,15 @@
-# Rafflr Frontend - Multi-Page Application
+# Rafflr Frontend
 
-A modern, production-grade React application for Rafflr, featuring a complete multi-page architecture with dedicated pages for different user interactions.
+This project is the frontend for the Rafflr platform. It is built with React and provides a modern, multi-page user interface for creating, managing, and participating in on-chain raffles. The application features smart contract integration, responsive design, and a professional dark theme for an enhanced user experience.
+
+Key features include:
+- Multi-page architecture (Landing, Create Raffle, Profile, Raffle Detail, etc.)
+- Real-time smart contract data and wallet integration
+- Separate forms for prized and non-prized raffles
+- Collection deployment and management tools
+- Responsive and accessible UI/UX
+
+For more information, see the code and comments in the repository.
 
 ## 🚀 Features
 

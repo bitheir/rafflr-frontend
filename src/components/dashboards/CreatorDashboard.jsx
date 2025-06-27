@@ -17,7 +17,7 @@ const CreateRaffleForm = () => {
     ticketLimit: '',
     winnersCount: '',
     maxTicketsPerParticipant: '',
-    hasPrize: false,
+    isPrized: false,
     customTicketPrice: '',
     prizeSource: 'new',
     prizeCollection: '',
@@ -54,7 +54,7 @@ const CreateRaffleForm = () => {
 
       let result;
 
-      if (formData.hasPrize && formData.prizeSource === 'new') {
+      if (formData.isPrized && formData.prizeSource === 'new') {
         // Create raffle with new collection
         result = await executeTransaction(
           contracts.raffleDeployer.createRaffle,
@@ -64,7 +64,7 @@ const CreateRaffleForm = () => {
           parseInt(formData.ticketLimit),
           parseInt(formData.winnersCount),
           parseInt(formData.maxTicketsPerParticipant),
-          formData.hasPrize,
+          formData.isPrized,
           customTicketPrice,
           false, // useMintableWorkflow
           ethers.constants.AddressZero, // prizeCollection
@@ -79,7 +79,7 @@ const CreateRaffleForm = () => {
           ethers.constants.AddressZero, // royaltyRecipient (will be set by contract)
           parseInt(formData.maxSupply || formData.winnersCount)
         );
-      } else if (formData.hasPrize && formData.prizeSource === 'existing') {
+      } else if (formData.isPrized && formData.prizeSource === 'existing') {
         // Create raffle with existing collection
         const standard = formData.prizeType === 'erc721' ? 0 : 1;
         
@@ -91,7 +91,7 @@ const CreateRaffleForm = () => {
           parseInt(formData.ticketLimit),
           parseInt(formData.winnersCount),
           parseInt(formData.maxTicketsPerParticipant),
-          formData.hasPrize,
+          formData.isPrized,
           customTicketPrice,
           formData.useMintableWorkflow,
           formData.prizeCollection,
@@ -116,7 +116,7 @@ const CreateRaffleForm = () => {
           parseInt(formData.ticketLimit),
           parseInt(formData.winnersCount),
           parseInt(formData.maxTicketsPerParticipant),
-          false, // hasPrize
+          false, // isPrized
           0, // customTicketPrice
           false, // useMintableWorkflow
           ethers.constants.AddressZero, // prizeCollection
@@ -143,7 +143,7 @@ const CreateRaffleForm = () => {
           ticketLimit: '',
           winnersCount: '',
           maxTicketsPerParticipant: '',
-          hasPrize: false,
+          isPrized: false,
           customTicketPrice: '',
           prizeSource: 'new',
           prizeCollection: '',
@@ -248,15 +248,15 @@ const CreateRaffleForm = () => {
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
-            id="hasPrize"
-            checked={formData.hasPrize}
-            onChange={(e) => handleChange('hasPrize', e.target.checked)}
+            id="isPrized"
+            checked={formData.isPrized}
+            onChange={(e) => handleChange('isPrized', e.target.checked)}
             className="rounded border-border"
           />
-          <label htmlFor="hasPrize" className="text-sm font-medium">Has Prize</label>
+          <label htmlFor="isPrized" className="text-sm font-medium">Prized Raffle</label>
         </div>
 
-        {formData.hasPrize && (
+        {formData.isPrized && (
           <div className="space-y-4 p-4 bg-muted rounded-lg">
             <div>
               <label className="block text-sm font-medium mb-1">Ticket Price (ETH)</label>

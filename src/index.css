@@ -6,3 +6,39 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
+
+/* Ensure calendar icon is visible in datetime-local inputs for both themes */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5);
+  cursor: pointer;
+  opacity: 1;
+}
+
+/* Dark theme calendar icon */
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+/* Firefox calendar icon */
+input[type="datetime-local"]::-moz-calendar-picker-indicator {
+  filter: invert(0.5);
+  cursor: pointer;
+  opacity: 1;
+}
+
+.dark input[type="datetime-local"]::-moz-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+/* Edge calendar icon */
+input[type="datetime-local"]::-ms-clear,
+input[type="datetime-local"]::-ms-expand {
+  filter: invert(0.5);
+  cursor: pointer;
+  opacity: 1;
+}
+
+.dark input[type="datetime-local"]::-ms-clear,
+.dark input[type="datetime-local"]::-ms-expand {
+  filter: invert(1);
+}

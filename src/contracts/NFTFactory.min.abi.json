@@ -1,4 +1,9 @@
 [
+  { "anonymous": false, "inputs": [
+    { "indexed": true, "internalType": "address", "name": "collection", "type": "address" },
+    { "indexed": true, "internalType": "address", "name": "creator", "type": "address" },
+    { "indexed": false, "internalType": "uint8", "name": "standard", "type": "uint8" }
+  ], "name": "PrizeCollectionCreated", "type": "event" },
   { "inputs": [
       { "internalType": "uint8", "name": "standard", "type": "uint8" },
       { "internalType": "string", "name": "name", "type": "string" },

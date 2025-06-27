@@ -8,6 +8,7 @@ import RoyaltyAdjustmentComponent from '../components/RoyaltyAdjustmentComponent
 import CreatorRevenueWithdrawalComponent from '../components/CreatorRevenueWithdrawalComponent';
 import MinterApprovalComponent from '../components/MinterApprovalComponent';
 import { CONTRACT_ADDRESSES } from '../constants';
+import { Button } from '../components/ui/button';
 
 function mapRaffleState(stateNum) {
   switch (stateNum) {
@@ -110,23 +111,55 @@ const ActivityCard = ({ activity }) => {
 
 const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
   const navigate = useNavigate();
+  const { executeTransaction, getContractInstance } = useContract();
   const [timeRemaining, setTimeRemaining] = useState('');
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    let interval;
+    function updateTimer() {
       const now = Math.floor(Date.now() / 1000);
-      const endTime = raffle.startTime + raffle.duration;
-      const remaining = endTime - now;
-      
+      let targetTime;
+      if (raffle.state === 'pending') {
+        targetTime = raffle.startTime;
+        const remaining = targetTime - now;
       if (remaining > 0) {
-        const hours = Math.floor(remaining / 3600);
-        const minutes = Math.floor((remaining % 3600) / 60);
-        setTimeRemaining(`${hours}h ${minutes}m`);
+          setTimeRemaining(formatTime(remaining));
+        } else {
+          // If still pending after start time, start counting down to end time
+          targetTime = raffle.startTime + raffle.duration;
+          const remainingToEnd = targetTime - now;
+          if (remainingToEnd > 0) {
+            setTimeRemaining(formatTime(remainingToEnd));
       } else {
         setTimeRemaining('Ended');
       }
-    }, 1000);
-
+        }
+      } else if (raffle.state === 'active') {
+        targetTime = raffle.startTime + raffle.duration;
+        const remaining = targetTime - now;
+        if (remaining > 0) {
+          setTimeRemaining(formatTime(remaining));
+        } else {
+          setTimeRemaining('Ended');
+        }
+      } else {
+        setTimeRemaining('Ended');
+      }
+    }
+    function formatTime(seconds) {
+      const days = Math.floor(seconds / 86400);
+      const hours = Math.floor((seconds % 86400) / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      let formatted = '';
+      if (days > 0) formatted += `${days}d `;
+      if (hours > 0 || days > 0) formatted += `${hours}h `;
+      if (minutes > 0 || hours > 0 || days > 0) formatted += `${minutes}m `;
+      formatted += `${secs}s`;
+      return formatted.trim();
+    }
+    updateTimer();
+    interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, [raffle]);
 
@@ -177,28 +210,51 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
       </div>
       
       <div className="flex gap-2">
-        <button
+        <Button
           onClick={() => navigate(`/raffle/${raffle.address}`)}
           className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-2 rounded-md hover:from-blue-600 hover:to-purple-700 transition-colors text-sm"
         >
           View
-        </button>
+        </Button>
         {raffle.totalRevenue && parseFloat(ethers.utils.formatEther(raffle.totalRevenue)) > 0 && (
-          <button
+          <Button
             onClick={() => onViewRevenue(raffle)}
             className="px-3 py-2 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-md hover:from-green-600 hover:to-teal-700 transition-colors text-sm"
           >
             Revenue
-          </button>
+          </Button>
         )}
         {canDelete() && (
-          <button
+          <Button
             onClick={() => onDelete(raffle)}
             className="px-3 py-2 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-md hover:from-red-600 hover:to-pink-700 transition-colors text-sm font-medium"
             title={raffle.ticketsSold > 0 ? "Delete raffle (refunds will be processed automatically)" : "Delete this raffle"}
           >
             Delete
-          </button>
+          </Button>
+        )}
+        {/* Mint to Winner button for creator */}
+        {raffle.isCreator && (
+          <Button
+            onClick={async () => {
+              try {
+                const raffleContract = getContractInstance(raffle.address, 'raffle');
+                if (!raffleContract) throw new Error('Failed to get raffle contract');
+                const result = await executeTransaction(raffleContract.mintToWinner);
+                if (result.success) {
+                  alert('mintToWinner() executed successfully!');
+                  window.location.reload();
+                } else {
+                  throw new Error(result.error);
+                }
+              } catch (err) {
+                alert('mintToWinner failed: ' + err.message);
+              }
+            }}
+            className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base"
+          >
+            Mint to Winner
+          </Button>
         )}
       </div>
       
@@ -265,7 +321,7 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
       <div className="flex gap-2">
         <button
           onClick={() => navigate(`/raffle/${ticket.raffleAddress}`)}
-          className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white px-3 py-2 rounded-md hover:from-gray-600 hover:to-gray-700 transition-colors text-sm"
+          className="w-full bg-gradient-to-r from-gray-500 to-gray-600 text-white px-3 py-2 rounded-md hover:from-gray-600 hover:to-gray-700 transition-colors text-sm"
         >
           Visit Raffle Page
         </button>
@@ -404,19 +460,29 @@ const ProfilePage = () => {
                 for (const ticketEvent of ticketEvents) {
                   const block = await provider.getBlock(ticketEvent.blockNumber);
                   try {
-                    const [name, ticketPrice, stateNum, isWinner, prizeClaimed, refundClaimed, prizeCollection] = await Promise.all([
+                    const [
+                      name,
+                      ticketPrice,
+                      stateNum,
+                      isWinner,
+                      prizeClaimed,
+                      refundClaimed,
+                      prizeCollection,
+                      isPrizedContract
+                    ] = await Promise.all([
                       executeCall(raffleContract.name),
                       executeCall(raffleContract.ticketPrice),
                       executeCall(raffleContract.state),
                       executeCall(raffleContract.isWinner, address),
                       executeCall(raffleContract.prizeClaimed, address),
                       executeCall(raffleContract.refundClaimed, address),
-                      executeCall(raffleContract.prizeCollection)
+                      executeCall(raffleContract.prizeCollection),
+                      executeCall(raffleContract.isPrized)
                     ]);
 
-                    const hasPrize = prizeCollection.success && prizeCollection.result && prizeCollection.result !== ethers.constants.AddressZero;
+                    const isPrized = !!isPrizedContract.success && isPrizedContract.result;
                     let mappedState = stateNum.success ? mapRaffleState(stateNum.result) : 'unknown';
-                    if (!hasPrize && mappedState === 'allPrizesClaimed') {
+                    if (!isPrized && mappedState === 'allPrizesClaimed') {
                       mappedState = 'completed';
                     }
 
@@ -436,7 +502,7 @@ const ProfilePage = () => {
                       raffleState: mappedState,
                       prizeClaimed: prizeClaimed.success ? prizeClaimed.result : false,
                       refundClaimed: refundClaimed.success ? refundClaimed.result : false,
-                      hasPrize
+                      isPrized
                     });
                   } catch (error) {
                     console.error('Error fetching ticket details:', error);
@@ -719,19 +785,29 @@ const ProfilePage = () => {
 
           for (const ticketEvent of ticketEvents) {
             try {
-              const [name, ticketPrice, stateNum, isWinner, prizeClaimed, refundClaimed, prizeCollection] = await Promise.all([
+              const [
+                name,
+                ticketPrice,
+                stateNum,
+                isWinner,
+                prizeClaimed,
+                refundClaimed,
+                prizeCollection,
+                isPrizedContract
+              ] = await Promise.all([
                 executeCall(raffleContract.name),
                 executeCall(raffleContract.ticketPrice),
                 executeCall(raffleContract.state),
                 executeCall(raffleContract.isWinner, address),
                 executeCall(raffleContract.prizeClaimed, address),
                 executeCall(raffleContract.refundClaimed, address),
-                executeCall(raffleContract.prizeCollection)
+                executeCall(raffleContract.prizeCollection),
+                executeCall(raffleContract.isPrized)
               ]);
 
-              const hasPrize = prizeCollection.success && prizeCollection.result && prizeCollection.result !== ethers.constants.AddressZero;
+              const isPrized = !!isPrizedContract.success && isPrizedContract.result;
               let mappedState = stateNum.success ? mapRaffleState(stateNum.result) : 'unknown';
-              if (!hasPrize && mappedState === 'allPrizesClaimed') {
+              if (!isPrized && mappedState === 'allPrizesClaimed') {
                 mappedState = 'completed';
               }
 
@@ -752,7 +828,7 @@ const ProfilePage = () => {
                   raffleState: mappedState,
                   prizeClaimed: prizeClaimed.success ? prizeClaimed.result : false,
                   refundClaimed: refundClaimed.success ? refundClaimed.result : false,
-                  hasPrize
+                  isPrized
                 });
               }
             } catch (error) {
@@ -901,7 +977,7 @@ const ProfilePage = () => {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 pb-16">
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>

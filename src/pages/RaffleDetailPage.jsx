@@ -5,6 +5,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
 
 const TicketPurchaseSection = ({ raffle, onPurchase }) => {
   const { connected } = useWallet();
@@ -147,7 +148,7 @@ const PrizeImageCard = ({ raffle }) => {
 
   useEffect(() => {
     async function fetchPrizeImage() {
-      if (!raffle.hasPrize) return;
+      if (!raffle.isPrized) return;
       setLoading(true);
       try {
         let uri;
@@ -177,10 +178,10 @@ const PrizeImageCard = ({ raffle }) => {
       }
       setLoading(false);
     }
-    if (raffle.hasPrize) fetchPrizeImage();
+    if (raffle.isPrized) fetchPrizeImage();
   }, [raffle, getContractInstance]);
 
-  if (!raffle.hasPrize || loading || !imageUrl) return null;
+  if (!raffle.isPrized || loading || !imageUrl) return null;
 
   return (
     <Card className="h-full flex flex-col items-center justify-center">
@@ -304,14 +305,14 @@ const WinnersSection = ({ raffle }) => {
                       <p className="text-sm text-muted-foreground font-mono">
                         {winner.address.slice(0, 10)}...{winner.address.slice(-8)}
                       </p>
-                      {raffle.hasPrize && (
+                      {raffle.isPrized && (
                         <p className="text-xs text-muted-foreground">
                           Prizes claimed: {winner.claimedWins}
                         </p>
                       )}
                     </div>
                     <div className="text-right">
-                      {raffle.hasPrize ? (
+                      {raffle.isPrized ? (
                         winner.prizeClaimed ? (
                           <span className="text-green-600 text-sm">Claimed</span>
                         ) : (
@@ -411,7 +412,7 @@ const RaffleDetailPage = () => {
         }
 
         // Fetch basic raffle data
-        const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, prizeCollection, prizeTokenId, standard] = await Promise.all([
+        const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard] = await Promise.all([
           raffleContract.name(),
           raffleContract.creator(),
           raffleContract.startTime(),
@@ -420,6 +421,7 @@ const RaffleDetailPage = () => {
           raffleContract.ticketLimit(),
           raffleContract.winnersCount(),
           raffleContract.maxTicketsPerParticipant(),
+          raffleContract.isPrized(),
           raffleContract.prizeCollection(),
           raffleContract.prizeTokenId(),
           raffleContract.standard(),
@@ -502,24 +504,22 @@ const RaffleDetailPage = () => {
           }
         }
 
+        const isPrized = !!isPrizedContract;
+
         const raffleData = {
           address: raffleAddress,
-          name: name || `Raffle ${raffleAddress.slice(0, 8)}`,
-          creator: creator,
+          name,
+          creator,
           startTime: startTime.toNumber(),
           duration: duration.toNumber(),
-          ticketPrice: ticketPrice,
+          ticketPrice,
           ticketLimit: ticketLimit.toNumber(),
-          ticketsSold: ticketsSold,
+          ticketsSold,
           winnersCount: winnersCount.toNumber(),
           maxTicketsPerParticipant: maxTicketsPerParticipant.toNumber(),
-          hasPrize: prizeCollection !== ethers.constants.AddressZero,
-          prizeCollection: prizeCollection,
-          prizeTokenId: prizeTokenId ? prizeTokenId.toString() : null,
-          standard: typeof standard === 'object' && 'toNumber' in standard ? standard.toNumber() : Number(standard),
-          state: state,
-          userTickets: userTickets,
-          userTicketsRemaining: userTicketsRemaining
+          isPrized,
+          prizeCollection: !!isPrized ? prizeCollection : null,
+          state: state
         };
         
         setRaffle(raffleData);
@@ -541,33 +541,51 @@ const RaffleDetailPage = () => {
   // Update countdown timer
   useEffect(() => {
     if (!raffle) return;
-    const interval = setInterval(() => {
+    let interval;
+    function updateTimer() {
       const now = Math.floor(Date.now() / 1000);
       let targetTime;
       if (raffle.state === 'pending') {
         targetTime = raffle.startTime;
+        const remaining = targetTime - now;
+        if (remaining > 0) {
+          setTimeRemaining(formatTime(remaining));
+        } else {
+          // If still pending after start time, start counting down to end time
+          targetTime = raffle.startTime + raffle.duration;
+          const remainingToEnd = targetTime - now;
+          if (remainingToEnd > 0) {
+            setTimeRemaining(formatTime(remainingToEnd));
+          } else {
+            setTimeRemaining('Ended');
+          }
+        }
       } else if (raffle.state === 'active') {
         targetTime = raffle.startTime + raffle.duration;
-      } else {
-        setTimeRemaining('Ended');
-        return;
-      }
-      const remaining = targetTime - now;
-      if (remaining > 0) {
-        const days = Math.floor(remaining / 86400);
-        const hours = Math.floor((remaining % 86400) / 3600);
-        const minutes = Math.floor((remaining % 3600) / 60);
-        const seconds = remaining % 60;
-        let formatted = '';
-        if (days > 0) formatted += `${days}d `;
-        if (hours > 0 || days > 0) formatted += `${hours}h `;
-        if (minutes > 0 || hours > 0 || days > 0) formatted += `${minutes}m `;
-        formatted += `${seconds}s`;
-        setTimeRemaining(formatted.trim());
+        const remaining = targetTime - now;
+        if (remaining > 0) {
+          setTimeRemaining(formatTime(remaining));
+        } else {
+          setTimeRemaining('Ended');
+        }
       } else {
         setTimeRemaining('Ended');
       }
-    }, 1000);
+    }
+    function formatTime(seconds) {
+      const days = Math.floor(seconds / 86400);
+      const hours = Math.floor((seconds % 86400) / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      let formatted = '';
+      if (days > 0) formatted += `${days}d `;
+      if (hours > 0 || days > 0) formatted += `${hours}h `;
+      if (minutes > 0 || hours > 0 || days > 0) formatted += `${minutes}m `;
+      formatted += `${secs}s`;
+      return formatted.trim();
+    }
+    updateTimer();
+    interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, [raffle]);
 
@@ -703,7 +721,7 @@ const RaffleDetailPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 pb-16">
       {/* Header */}
       <div className="mb-8">
         <button
@@ -732,6 +750,29 @@ const RaffleDetailPage = () => {
                 <Trash2 className="h-4 w-4" />
                 Delete Raffle
               </button>
+            )}
+            {/* Mint to Winner button for creator */}
+            {connected && address?.toLowerCase() === raffle.creator.toLowerCase() && (
+              <Button
+                onClick={async () => {
+                  try {
+                    const raffleContract = getContractInstance(raffle.address, 'raffle');
+                    if (!raffleContract) throw new Error('Failed to get raffle contract');
+                    const result = await executeTransaction(raffleContract.mintToWinner);
+                    if (result.success) {
+                      alert('mintToWinner() executed successfully!');
+                      window.location.reload();
+                    } else {
+                      throw new Error(result.error);
+                    }
+                  } catch (err) {
+                    alert('mintToWinner failed: ' + err.message);
+                  }
+                }}
+                className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base"
+              >
+                Mint to Winner
+              </Button>
             )}
           </div>
         </div>
@@ -805,7 +846,7 @@ const RaffleDetailPage = () => {
                 <span className="text-muted-foreground">Ticket Price:</span>
                 <span>{ethers.utils.formatEther(raffle.ticketPrice)} ETH</span>
               </div>
-              {raffle.hasPrize && (
+              {raffle.isPrized && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Prize Collection:</span>
                   <span className="font-mono">{raffle.prizeCollection.slice(0, 10)}...{raffle.prizeCollection.slice(-8)}</span>

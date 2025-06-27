@@ -2,6 +2,10 @@
   { "anonymous": false, "inputs": [
     { "indexed": true, "internalType": "address", "name": "raffle", "type": "address" }
   ], "name": "RaffleRegistered", "type": "event" },
+  { "anonymous": false, "inputs": [
+    { "indexed": true, "internalType": "address", "name": "token", "type": "address" },
+    { "indexed": false, "internalType": "bool", "name": "whitelisted", "type": "bool" }
+  ], "name": "ERC20PrizeWhitelisted", "type": "event" },
   {
     "inputs": [],
     "name": "getAllRaffles",
@@ -9,6 +13,15 @@
       { "internalType": "address[]", "name": "", "type": "address[]" }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" }
+    ],
+    "name": "addERC20Prize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ] 

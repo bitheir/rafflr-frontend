@@ -4,8 +4,9 @@ import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
 import { Link } from 'react-router-dom';
+import { Button } from '../components/ui/button';
 
-const DeployCollectionPage = () => {
+const DeployERC1155CollectionPage = () => {
   const { connected } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
@@ -73,7 +74,7 @@ const DeployCollectionPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background py-10">
+    <div className="min-h-screen bg-background py-4 pb-16">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold mb-3">Deploy ERC1155 Prize Collection</h1>
@@ -153,19 +154,19 @@ const DeployCollectionPage = () => {
             <div className="flex gap-4">
               <Link
                 to="/create-raffle"
-                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-5 py-3 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-colors flex items-center justify-center gap-2 text-base"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-5 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-colors flex items-center justify-center gap-2 text-base h-12"
               >
                 <ArrowLeft className="h-5 w-5" />
                 Create Raffle
               </Link>
               
-              <button
+              <Button
                 type="submit"
                 disabled={loading || !connected}
-                className="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white px-5 py-3 rounded-lg hover:from-green-600 hover:to-teal-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base"
+                className="bg-gradient-to-r from-green-500 to-teal-600 text-white px-5 rounded-lg hover:from-green-600 hover:to-teal-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12 flex-1"
               >
                 {loading ? 'Deploying...' : 'Deploy Collection'}
-              </button>
+              </Button>
             </div>
           </form>
         </div>
@@ -174,4 +175,4 @@ const DeployCollectionPage = () => {
   );
 };
 
-export default DeployCollectionPage;
+export default DeployERC1155CollectionPage;
