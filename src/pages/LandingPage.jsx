@@ -125,20 +125,11 @@ const RaffleCard = ({ raffle }) => {
   );
 };
 
-const RaffleSection = ({ title, raffles, icon: Icon }) => {
-  const scrollRef = React.useRef(null);
-
-  const scrollLeft = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -370, behavior: 'smooth' });
-    }
-  };
-
-  const scrollRight = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 370, behavior: 'smooth' });
-    }
-  };
+const RaffleSection = ({ title, raffles, icon: Icon, stateKey }) => {
+  const navigate = useNavigate();
+  // Reverse for newest first
+  const sortedRaffles = [...raffles].reverse();
+  const displayedRaffles = sortedRaffles.slice(0, 4);
 
   if (raffles.length === 0) {
     return (
@@ -162,9 +153,15 @@ const RaffleSection = ({ title, raffles, icon: Icon }) => {
           <Icon className="h-5 w-5" />
           {title} ({raffles.length})
         </h2>
+        <button
+          className="text-primary underline text-sm font-medium hover:text-primary/80 transition-colors"
+          onClick={() => navigate(`/raffles/${stateKey}`)}
+        >
+          View all {title.toLowerCase()}
+        </button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 min-w-0">
-        {raffles.map((raffle) => (
+        {displayedRaffles.map((raffle) => (
           <RaffleCard key={raffle.id} raffle={raffle} />
         ))}
       </div>
@@ -418,11 +415,11 @@ const LandingPage = () => {
       </div>
 
       <div className="mt-16">
-        <RaffleSection title="Active Raffles" raffles={active} icon={Clock} />
-        <RaffleSection title="Pending Raffles" raffles={pending} icon={Users} />
-        <RaffleSection title="Drawing Phase" raffles={drawing} icon={Trophy} />
-        <RaffleSection title="Completed Raffles" raffles={completed} icon={Ticket} />
-        <RaffleSection title="Ended Raffles" raffles={ended} icon={Clock} />
+        <RaffleSection title="Active Raffles" raffles={active} icon={Clock} stateKey="active" />
+        <RaffleSection title="Pending Raffles" raffles={pending} icon={Users} stateKey="pending" />
+        <RaffleSection title="Drawing Phase" raffles={drawing} icon={Trophy} stateKey="drawing" />
+        <RaffleSection title="Ended Raffles" raffles={ended} icon={Clock} stateKey="ended" />
+        <RaffleSection title="Completed Raffles" raffles={completed} icon={Ticket} stateKey="completed" />
       </div>
 
       {raffles.length === 0 && !loading && !error && (
