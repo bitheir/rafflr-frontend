@@ -977,8 +977,8 @@ const ProfilePage = () => {
   ];
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 pb-16">
-      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
+    <div className="mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 2xl:px-10 pb-16">
+      <div className="mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 2xl:px-10 py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
