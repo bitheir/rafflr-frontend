@@ -977,258 +977,260 @@ const ProfilePage = () => {
   ];
 
   return (
-    <div className="container mx-auto px-4 pb-16">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Profile</h1>
-            <p className="text-muted-foreground">
-              Track activities, manage your raffles, revenue and collections
-            </p>
-          </div>
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-md hover:from-blue-600 hover:to-purple-700 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-        </div>
-        <div className="mt-4 p-3 bg-muted rounded-lg">
-          <p className="text-sm font-medium">Connected Account:</p>
-          <p className="font-mono text-sm">{address}</p>
-        </div>
-      </div>
-
-      {/* Activity Stats */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Activity Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <Ticket className="h-8 w-8 text-blue-500" />
-              <div>
-                <p className="text-2xl font-bold">{activityStats.totalTicketsPurchased}</p>
-                <p className="text-sm text-muted-foreground">Tickets Purchased</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <Plus className="h-8 w-8 text-green-500" />
-              <div>
-                <p className="text-2xl font-bold">{activityStats.totalRafflesCreated}</p>
-                <p className="text-sm text-muted-foreground">Raffles Created</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <Trophy className="h-8 w-8 text-yellow-500" />
-              <div>
-                <p className="text-2xl font-bold">{activityStats.totalPrizesWon}</p>
-                <p className="text-sm text-muted-foreground">Prizes Won</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <DollarSign className="h-8 w-8 text-emerald-500" />
-              <div>
-                <p className="text-2xl font-bold">{parseFloat(ethers.utils.formatEther(activityStats.totalRevenueWithdrawn)).toFixed(4)}</p>
-                <p className="text-sm text-muted-foreground">ETH Withdrawn</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <Minus className="h-8 w-8 text-orange-500" />
-              <div>
-                <p className="text-2xl font-bold">{activityStats.totalRefundsClaimed}</p>
-                <p className="text-sm text-muted-foreground">Refunds Claimed</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="mb-8">
-        <div className="flex border-b border-border overflow-x-auto">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-3 whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent hover:text-foreground'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="font-medium">{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Tab Content */}
-      {loading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      ) : (
-        <div>
-          {activeTab === 'activity' && (
+    <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 pb-16">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Recent Activity</h2>
-                <p className="text-sm text-muted-foreground">
-                  Showing last 50,000 blocks of activity
-                </p>
-              </div>
-              {userActivity.length > 0 ? (
-                <div className="space-y-4">
-                  {userActivity.map((activity, index) => (
-                    <ActivityCard key={`${activity.txHash}-${activity.blockNumber}-${index}`} activity={activity} />
-                  ))}
+              <h1 className="text-3xl font-bold mb-2">Profile</h1>
+              <p className="text-muted-foreground">
+                Track activities, manage your raffles, revenue and collections
+              </p>
+            </div>
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-md hover:from-blue-600 hover:to-purple-700 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          </div>
+          <div className="mt-4 p-3 bg-muted rounded-lg">
+            <p className="text-sm font-medium">Connected Account:</p>
+            <p className="font-mono text-sm">{address}</p>
+          </div>
+        </div>
+
+        {/* Activity Stats */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Activity Overview</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="bg-card border border-border rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <Ticket className="h-8 w-8 text-blue-500" />
+                <div>
+                  <p className="text-2xl font-bold">{activityStats.totalTicketsPurchased}</p>
+                  <p className="text-sm text-muted-foreground">Tickets Purchased</p>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No activity found in the last 50,000 blocks</p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Try participating in raffles or creating your own to see activity here
+              </div>
+            </div>
+            <div className="bg-card border border-border rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <Plus className="h-8 w-8 text-green-500" />
+                <div>
+                  <p className="text-2xl font-bold">{activityStats.totalRafflesCreated}</p>
+                  <p className="text-sm text-muted-foreground">Raffles Created</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-card border border-border rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <Trophy className="h-8 w-8 text-yellow-500" />
+                <div>
+                  <p className="text-2xl font-bold">{activityStats.totalPrizesWon}</p>
+                  <p className="text-sm text-muted-foreground">Prizes Won</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-card border border-border rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <DollarSign className="h-8 w-8 text-emerald-500" />
+                <div>
+                  <p className="text-2xl font-bold">{parseFloat(ethers.utils.formatEther(activityStats.totalRevenueWithdrawn)).toFixed(4)}</p>
+                  <p className="text-sm text-muted-foreground">ETH Withdrawn</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-card border border-border rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <Minus className="h-8 w-8 text-orange-500" />
+                <div>
+                  <p className="text-2xl font-bold">{activityStats.totalRefundsClaimed}</p>
+                  <p className="text-sm text-muted-foreground">Refunds Claimed</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="mb-8">
+          <div className="flex border-b border-border overflow-x-auto">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-6 py-3 whitespace-nowrap border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-primary text-primary'
+                      : 'border-transparent hover:text-foreground'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="font-medium">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        ) : (
+          <div>
+            {activeTab === 'activity' && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Recent Activity</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Showing last 50,000 blocks of activity
                   </p>
                 </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'created' && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Created Raffles</h2>
-                <button
-                  onClick={() => navigate('/create-raffle')}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-md hover:from-blue-600 hover:to-purple-700 transition-colors"
-                >
-                  Create New Raffle
-                </button>
+                {userActivity.length > 0 ? (
+                  <div className="space-y-4">
+                    {userActivity.map((activity, index) => (
+                      <ActivityCard key={`${activity.txHash}-${activity.blockNumber}-${index}`} activity={activity} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No activity found in the last 50,000 blocks</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Try participating in raffles or creating your own to see activity here
+                    </p>
+                  </div>
+                )}
               </div>
-              {createdRaffles.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {createdRaffles.map((raffle) => (
-                    <CreatedRaffleCard
-                      key={raffle.id}
-                      raffle={raffle}
-                      onDelete={handleDeleteRaffle}
-                      onViewRevenue={handleViewRevenue}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-4">You haven't created any raffles yet</p>
+            )}
+
+            {activeTab === 'created' && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Created Raffles</h2>
                   <button
                     onClick={() => navigate('/create-raffle')}
                     className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-md hover:from-blue-600 hover:to-purple-700 transition-colors"
                   >
-                    Create Your First Raffle
+                    Create New Raffle
                   </button>
                 </div>
-              )}
-            </div>
-          )}
+                {createdRaffles.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {createdRaffles.map((raffle) => (
+                      <CreatedRaffleCard
+                        key={raffle.id}
+                        raffle={raffle}
+                        onDelete={handleDeleteRaffle}
+                        onViewRevenue={handleViewRevenue}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-4">You haven't created any raffles yet</p>
+                    <button
+                      onClick={() => navigate('/create-raffle')}
+                      className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-md hover:from-blue-600 hover:to-purple-700 transition-colors"
+                    >
+                      Create Your First Raffle
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
-          {activeTab === 'tickets' && (
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Purchased Tickets</h2>
-              {purchasedTickets.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {purchasedTickets.map((ticket) => (
-                    <PurchasedTicketsCard
-                      key={ticket.id}
-                      ticket={ticket}
-                      onClaimPrize={handleClaimPrize}
-                      onClaimRefund={handleClaimRefund}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Ticket className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">You haven't purchased any tickets yet</p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Visit the landing page to participate in active raffles
+            {activeTab === 'tickets' && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Purchased Tickets</h2>
+                {purchasedTickets.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {purchasedTickets.map((ticket) => (
+                      <PurchasedTicketsCard
+                        key={ticket.id}
+                        ticket={ticket}
+                        onClaimPrize={handleClaimPrize}
+                        onClaimRefund={handleClaimRefund}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Ticket className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">You haven't purchased any tickets yet</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Visit the landing page to participate in active raffles
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'collections' && (
+              <div className="space-y-8">
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">Creator Dashboard</h2>
+                  <p className="text-muted-foreground mb-6">
+                    Manage your NFT collections, adjust royalties, withdraw revenue, and control minter approvals.
                   </p>
                 </div>
-              )}
-            </div>
-          )}
+                
+                <RoyaltyAdjustmentComponent />
+                <CreatorRevenueWithdrawalComponent />
+                <MinterApprovalComponent />
+              </div>
+            )}
+          </div>
+        )}
 
-          {activeTab === 'collections' && (
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Creator Dashboard</h2>
-                <p className="text-muted-foreground mb-6">
-                  Manage your NFT collections, adjust royalties, withdraw revenue, and control minter approvals.
-                </p>
+        {/* Revenue Modal */}
+        {showRevenueModal && selectedRaffle && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Revenue Details</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Raffle:</span>
+                  <span className="font-medium">{selectedRaffle.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Revenue:</span>
+                  <span className="font-medium">{ethers.utils.formatEther(selectedRaffle.totalRevenue)} ETH</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tickets Sold:</span>
+                  <span className="font-medium">{selectedRaffle.ticketsSold}</span>
+                </div>
               </div>
-              
-              <RoyaltyAdjustmentComponent />
-              <CreatorRevenueWithdrawalComponent />
-              <MinterApprovalComponent />
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Revenue Modal */}
-      {showRevenueModal && selectedRaffle && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Revenue Details</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Raffle:</span>
-                <span className="font-medium">{selectedRaffle.name}</span>
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowRevenueModal(false)}
+                  className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-md hover:from-gray-600 hover:to-gray-700 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    // Handle revenue withdrawal
+                    setShowRevenueModal(false);
+                  }}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white px-4 py-2 rounded-md hover:from-green-600 hover:to-teal-700 transition-colors"
+                >
+                  Withdraw
+                </button>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total Revenue:</span>
-                <span className="font-medium">{ethers.utils.formatEther(selectedRaffle.totalRevenue)} ETH</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tickets Sold:</span>
-                <span className="font-medium">{selectedRaffle.ticketsSold}</span>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowRevenueModal(false)}
-                className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-md hover:from-gray-600 hover:to-gray-700 transition-colors"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  // Handle revenue withdrawal
-                  setShowRevenueModal(false);
-                }}
-                className="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white px-4 py-2 rounded-md hover:from-green-600 hover:to-teal-700 transition-colors"
-              >
-                Withdraw
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

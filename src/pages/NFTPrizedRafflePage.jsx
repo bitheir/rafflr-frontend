@@ -135,7 +135,7 @@ const NFTPrizedRafflePage = () => {
 
   if (!connected) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">NFT-Prized Raffles</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -154,7 +154,7 @@ const NFTPrizedRafflePage = () => {
   }
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
         <div className="text-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-lg text-muted-foreground">Loading NFT-prized raffles from blockchain...</p>
@@ -164,7 +164,7 @@ const NFTPrizedRafflePage = () => {
   }
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">NFT-Prized Raffles</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -181,7 +181,7 @@ const NFTPrizedRafflePage = () => {
     );
   }
   return (
-    <div className="container mx-auto px-4 pb-16">
+    <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 pb-16">
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-4">NFT-Prized Raffles</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">

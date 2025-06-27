@@ -347,7 +347,7 @@ const LandingPage = () => {
   // Show wallet connection prompt if not connected
   if (!connected) {
     return (
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-4">
         <div className="mb-4 text-center">
           <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -373,7 +373,7 @@ const LandingPage = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
         <div className="text-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-lg text-muted-foreground">Loading raffles from blockchain...</p>
@@ -385,7 +385,7 @@ const LandingPage = () => {
   // Show error message if there's an error
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -409,7 +409,7 @@ const LandingPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-4 pb-16">
+    <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-4 pb-16">
       <div className="mb-4 text-center">
         <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
