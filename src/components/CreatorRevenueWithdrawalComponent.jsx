@@ -194,13 +194,11 @@ const CreatorRevenueWithdrawalComponent = () => {
                 className="flex-1 px-3 py-2 border border-border rounded-md bg-background"
                 placeholder="0x..."
               />
-              <button
-                onClick={() => loadRaffleInfo(raffleData.address)}
-                disabled={loadingInfo || !connected}
-                className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`h-4 w-4 ${loadingInfo ? 'animate-spin' : ''}`} />
-                {loadingInfo ? 'Loading...' : 'Load Info'}
+              <button onClick={() => loadRaffleInfo(raffleData.address)} disabled={loadingInfo || !connected} className="fancy h-12 px-6">
+                <span className="top-key"></span>
+                <span className="text">{loadingInfo ? 'Loading...' : 'Load Info'}</span>
+                <span className="bottom-key-1"></span>
+                <span className="bottom-key-2"></span>
               </button>
             </div>
           </div>
@@ -291,13 +289,14 @@ const CreatorRevenueWithdrawalComponent = () => {
         {/* Withdrawal Button */}
         {raffleData.address && raffleData.raffleState !== 'unknown' && (
           <div className="space-y-4">
-            <button
-              onClick={handleWithdrawRevenue}
-              disabled={loading || !connected || !canWithdraw}
-              className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              <DollarSign className="h-4 w-4" />
-              {loading ? 'Withdrawing...' : `Withdraw ${raffleData.revenueAmount} ETH`}
+            <button onClick={handleWithdrawRevenue} disabled={loading || !connected || !canWithdraw} className="fancy w-full h-12">
+              <span className="top-key"></span>
+              <span className="text flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                {loading ? 'Withdrawing...' : `Withdraw ${raffleData.revenueAmount} ETH`}
+              </span>
+              <span className="bottom-key-1"></span>
+              <span className="bottom-key-2"></span>
             </button>
             
             {!canWithdraw && raffleData.isCreator && (

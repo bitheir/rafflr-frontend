@@ -46,97 +46,79 @@ const TicketPurchaseSection = ({ raffle, onPurchase }) => {
   );
 
   return (
-    <div className="bg-card border border-border rounded-lg p-6">
+    <div className="bg-card border border-border rounded-lg p-6 min-h-[420px]">
       <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
         <Ticket className="h-5 w-5" />
         Purchase Tickets
       </h3>
 
-      {!canPurchaseTickets() ? (
-        <div className="text-center py-8">
-          <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">
-            {raffle.state === 'pending' 
-              ? 'Raffle has not started yet' 
-              : 'Raffle has ended'}
-          </p>
-        </div>
-      ) : remainingTickets <= 0 ? (
-        <div className="text-center py-8">
-          <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">All tickets have been sold!</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Price per ticket:</span>
-              <p className="font-semibold text-lg">{ethers.utils.formatEther(raffle.ticketPrice || '0')} ETH</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Remaining tickets:</span>
-              <p className="font-semibold text-lg">{remainingTickets}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Your tickets:</span>
-              <p className="font-semibold text-lg">{raffle.userTickets || 0}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Max per user:</span>
-              <p className="font-semibold text-lg">{raffle.maxTicketsPerParticipant}</p>
-            </div>
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="text-muted-foreground">Price per ticket:</span>
+            <p className="font-semibold text-lg">{ethers.utils.formatEther(raffle.ticketPrice || '0')} ETH</p>
           </div>
-
-          {maxPurchasable > 0 ? (
-            <>
-              <div>
-                <label className="block text-sm font-medium mb-2">Quantity</label>
-                <input
-                  type="number"
-                  min="1"
-                  max={maxPurchasable}
-                  value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, Math.min(maxPurchasable, parseInt(e.target.value) || 1)))}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Maximum: {maxPurchasable} tickets
-                </p>
-              </div>
-
-              <div className="p-3 bg-muted rounded-md">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Total Cost:</span>
-                  <span className="text-lg font-bold">{totalCost} ETH</span>
-                </div>
-              </div>
-
-              <button
-                onClick={handlePurchase}
-                disabled={loading || !connected}
-                className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <Ticket className="h-4 w-4" />
-                {loading ? 'Processing...' : `Purchase ${quantity} Ticket${quantity > 1 ? 's' : ''}`}
-              </button>
-            </>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground">
-                You have reached the maximum number of tickets for this raffle.
-              </p>
-            </div>
-          )}
-
-          {!connected && (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground">
-                Please connect your wallet to purchase tickets.
-              </p>
-            </div>
-          )}
+          <div>
+            <span className="text-muted-foreground">Remaining tickets:</span>
+            <p className="font-semibold text-lg">{remainingTickets}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Your tickets:</span>
+            <p className="font-semibold text-lg">{raffle.userTickets || 0}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Max per user:</span>
+            <p className="font-semibold text-lg">{raffle.maxTicketsPerParticipant}</p>
+          </div>
         </div>
-      )}
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Quantity</label>
+          <input
+            type="number"
+            min="1"
+            max={maxPurchasable}
+            value={quantity}
+            onChange={(e) => setQuantity(Math.max(1, Math.min(maxPurchasable, parseInt(e.target.value) || 1)))}
+            className="w-full px-3 py-2 border border-border rounded-md bg-background"
+            disabled={!canPurchaseTickets() || maxPurchasable === 0}
+          />
+        </div>
+
+        <div className="p-3 bg-muted rounded-md">
+          <div className="flex justify-between items-center">
+            <span className="font-medium">Total Cost:</span>
+            <span className="text-lg font-bold">{totalCost} ETH</span>
+          </div>
+        </div>
+
+        <button
+          onClick={handlePurchase}
+          disabled={loading || !connected || !canPurchaseTickets() || maxPurchasable === 0}
+          className={`fancy w-full h-12 ${!canPurchaseTickets() || loading || !connected || maxPurchasable === 0 ? 'cursor-default' : ''}`}
+        >
+          <span className="top-key"></span>
+          <span className="text">{loading ? 'Processing...' : `Purchase ${quantity} Ticket${quantity > 1 ? 's' : ''}`}</span>
+          <span className="bottom-key-1"></span>
+          <span className="bottom-key-2"></span>
+        </button>
+
+        {!connected && (
+          <div className="text-center py-4">
+            <p className="text-muted-foreground">
+              Please connect your wallet to purchase tickets.
+            </p>
+          </div>
+        )}
+
+        {maxPurchasable === 0 && (
+          <div className="text-center py-4">
+            <p className="text-muted-foreground">
+              You have reached the maximum number of tickets for this raffle.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -711,9 +693,12 @@ const RaffleDetailPage = () => {
           </p>
           <button
             onClick={() => navigate('/')}
-            className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+            className="fancy h-12 px-6"
           >
-            Back to Home
+            <span className="top-key"></span>
+            <span className="text">Back to home</span>
+            <span className="bottom-key-1"></span>
+            <span className="bottom-key-2"></span>
           </button>
         </div>
       </div>
@@ -742,19 +727,16 @@ const RaffleDetailPage = () => {
           <div className="flex items-center gap-3">
             {getStatusBadge()}
             {canDelete() && (
-              <button
-                onClick={handleDeleteRaffle}
-                className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-pink-600 text-white px-4 py-2 rounded-md hover:from-red-600 hover:to-pink-700 transition-colors text-sm font-medium"
-                title={raffle.ticketsSold > 0 ? "Delete raffle (refunds will be processed automatically)" : "Delete this raffle"}
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete Raffle
+              <button onClick={handleDeleteRaffle} className="fancy h-12 px-6" title={raffle.ticketsSold > 0 ? "Delete raffle (refunds will be processed automatically)" : "Delete this raffle"}>
+                <span className="top-key"></span>
+                <span className="text">Delete raffle</span>
+                <span className="bottom-key-1"></span>
+                <span className="bottom-key-2"></span>
               </button>
             )}
             {/* Mint to Winner button for creator */}
             {connected && address?.toLowerCase() === raffle.creator.toLowerCase() && (
-              <Button
-                onClick={async () => {
+              <button onClick={async () => {
                   try {
                     const raffleContract = getContractInstance(raffle.address, 'raffle');
                     if (!raffleContract) throw new Error('Failed to get raffle contract');
@@ -768,11 +750,12 @@ const RaffleDetailPage = () => {
                   } catch (err) {
                     alert('mintToWinner failed: ' + err.message);
                   }
-                }}
-                className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base"
-              >
-                Mint to Winner
-              </Button>
+                }} className="fancy h-12 px-6">
+                <span className="top-key"></span>
+                <span className="text">Mint to winner</span>
+                <span className="bottom-key-1"></span>
+                <span className="bottom-key-2"></span>
+              </button>
             )}
           </div>
         </div>
@@ -824,7 +807,9 @@ const RaffleDetailPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Half - Raffle Engagement */}
         <div className="space-y-6">
-          <TicketPurchaseSection raffle={raffle} onPurchase={handlePurchaseTickets} />
+          <div className="relative overflow-hidden">
+            <TicketPurchaseSection raffle={raffle} onPurchase={handlePurchaseTickets} />
+          </div>
           
           {/* Additional Raffle Details */}
           <div className="bg-card border border-border rounded-lg p-6">

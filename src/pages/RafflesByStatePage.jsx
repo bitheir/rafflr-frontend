@@ -4,6 +4,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { RaffleCard } from './LandingPage';
 import { Trophy, Users, Clock, Ticket } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const stateTitleMap = {
   active: { title: 'Active Raffles', icon: Clock },
@@ -20,6 +21,7 @@ const RafflesByStatePage = () => {
   const [raffles, setRaffles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchRaffles = async () => {
@@ -152,9 +154,9 @@ const RafflesByStatePage = () => {
     <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 pb-16">
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-4">{title}</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          All {title.toLowerCase()} on the platform
-        </p>
+        {state === 'pending' && (
+          <p className="text-muted-foreground mb-4">Be Prepared! These raffles will be <code>Active</code> soon!</p>
+        )}
       </div>
       <div className="mt-16">
         {raffles.length === 0 ? (

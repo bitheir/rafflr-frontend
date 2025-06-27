@@ -131,7 +131,7 @@ const Header = () => {
             <div className="flex items-center justify-between h-16 px-6">
               <div className="flex items-center gap-3">
                 <Link to="/" className="flex items-center gap-3">
-                  <span className="text-xl font-bold" style={{ fontFamily: 'Orbitron, monospace' }}>Rafflr</span>
+                  <span className="text-xl font-bold" style={{ fontFamily: 'Orbitron, monospace' }}>Rafflhub</span>
                 </Link>
               </div>
               <div className="flex items-center gap-4 w-full justify-end">

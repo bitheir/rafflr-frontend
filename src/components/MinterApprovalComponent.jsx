@@ -320,31 +320,18 @@ const MinterApprovalComponent = () => {
             )}
 
             <div className="flex gap-2">
-              <Button
-                onClick={() => setMinterApproval(true)}
-                disabled={loading || !minterAddress || !validateAddress(minterAddress) || isApproved}
-                className="flex-1"
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <UserPlus className="h-4 w-4 mr-2" />
-                )}
-                Set as Minter
-              </Button>
-              <Button
-                onClick={() => setMinterApproval(false)}
-                disabled={loading || !minterAddress || !validateAddress(minterAddress) || !isApproved}
-                variant="outline"
-                className="flex-1"
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <UserMinus className="h-4 w-4 mr-2" />
-                )}
-                Remove as Minter
-              </Button>
+              <button onClick={() => setMinterApproval(true)} disabled={loading || !minterAddress || !validateAddress(minterAddress) || isApproved} className="fancy flex-1 h-12 px-6">
+                <span className="top-key"></span>
+                <span className="text">Set as Minter</span>
+                <span className="bottom-key-1"></span>
+                <span className="bottom-key-2"></span>
+              </button>
+              <button onClick={() => setMinterApproval(false)} disabled={loading || !minterAddress || !validateAddress(minterAddress) || !isApproved} className="fancy flex-1 h-12 px-6">
+                <span className="top-key"></span>
+                <span className="text">Remove as Minter</span>
+                <span className="bottom-key-1"></span>
+                <span className="bottom-key-2"></span>
+              </button>
             </div>
           </div>
         )}
@@ -353,21 +340,12 @@ const MinterApprovalComponent = () => {
         {selectedCollection && (
           <div className="space-y-2">
             <Label>Approval Lock Control</Label>
-            <Button
-              onClick={toggleMinterApprovalLock}
-              disabled={loading}
-              variant={isLocked ? "default" : "outline"}
-              className="w-full"
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : isLocked ? (
-                <Unlock className="h-4 w-4 mr-2" />
-              ) : (
-                <Lock className="h-4 w-4 mr-2" />
-              )}
-              {isLocked ? 'Unlock Minter Approval' : 'Lock Minter Approval'}
-            </Button>
+            <button onClick={toggleMinterApprovalLock} disabled={loading} className="fancy w-full h-12 px-6">
+              <span className="top-key"></span>
+              <span className="text">{isLocked ? 'Unlock Minter Approval' : 'Lock Minter Approval'}</span>
+              <span className="bottom-key-1"></span>
+              <span className="bottom-key-2"></span>
+            </button>
             <p className="text-sm text-muted-foreground">
               {isLocked 
                 ? "Unlocking will allow you to set new minter approvals."

@@ -97,11 +97,11 @@ const ActivityCard = ({ activity }) => {
           )}
         </div>
         {activity.raffleAddress && (
-          <button
-            onClick={() => navigate(`/raffle/${activity.raffleAddress}`)}
-            className="p-1 hover:bg-muted rounded-md transition-colors"
-          >
-            <Eye className="h-4 w-4" />
+          <button onClick={() => navigate(`/raffle/${activity.raffleAddress}`)} className="fancy h-12 flex items-center justify-center">
+            <span className="top-key"></span>
+            <span className="text"><Eye className="h-4 w-4" /></span>
+            <span className="bottom-key-1"></span>
+            <span className="bottom-key-2"></span>
           </button>
         )}
       </div>
@@ -210,33 +210,31 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
       </div>
       
       <div className="flex gap-2">
-        <Button
-          onClick={() => navigate(`/raffle/${raffle.address}`)}
-          className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-2 rounded-md hover:from-blue-600 hover:to-purple-700 transition-colors text-sm"
-        >
-          View
-        </Button>
+        <button onClick={() => navigate(`/raffle/${raffle.address}`)} className="fancy flex-1 h-12">
+          <span className="top-key"></span>
+          <span className="text">View</span>
+          <span className="bottom-key-1"></span>
+          <span className="bottom-key-2"></span>
+        </button>
         {raffle.totalRevenue && parseFloat(ethers.utils.formatEther(raffle.totalRevenue)) > 0 && (
-          <Button
-            onClick={() => onViewRevenue(raffle)}
-            className="px-3 py-2 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-md hover:from-green-600 hover:to-teal-700 transition-colors text-sm"
-          >
-            Revenue
-          </Button>
+          <button onClick={() => onViewRevenue(raffle)} className="fancy h-12">
+            <span className="top-key"></span>
+            <span className="text">Revenue</span>
+            <span className="bottom-key-1"></span>
+            <span className="bottom-key-2"></span>
+          </button>
         )}
         {canDelete() && (
-          <Button
-            onClick={() => onDelete(raffle)}
-            className="px-3 py-2 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-md hover:from-red-600 hover:to-pink-700 transition-colors text-sm font-medium"
-            title={raffle.ticketsSold > 0 ? "Delete raffle (refunds will be processed automatically)" : "Delete this raffle"}
-          >
-            Delete
-          </Button>
+          <button onClick={() => onDelete(raffle)} className="fancy h-12" title={raffle.ticketsSold > 0 ? "Delete raffle (refunds will be processed automatically)" : "Delete this raffle"}>
+            <span className="top-key"></span>
+            <span className="text">Delete</span>
+            <span className="bottom-key-1"></span>
+            <span className="bottom-key-2"></span>
+          </button>
         )}
         {/* Mint to Winner button for creator */}
         {raffle.isCreator && (
-          <Button
-            onClick={async () => {
+          <button onClick={async () => {
               try {
                 const raffleContract = getContractInstance(raffle.address, 'raffle');
                 if (!raffleContract) throw new Error('Failed to get raffle contract');
@@ -251,10 +249,13 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
                 alert('mintToWinner failed: ' + err.message);
               }
             }}
-            className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base"
-          >
-            Mint to Winner
-          </Button>
+            className="fancy"
+            >
+            <span className="top-key"></span>
+            <span className="text">Mint to winner</span>
+            <span className="bottom-key-1"></span>
+            <span className="bottom-key-2"></span>
+          </button>
         )}
       </div>
       
@@ -319,28 +320,28 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
       </div>
       
       <div className="flex gap-2">
-        <button
-          onClick={() => navigate(`/raffle/${ticket.raffleAddress}`)}
-          className="w-full bg-gradient-to-r from-gray-500 to-gray-600 text-white px-3 py-2 rounded-md hover:from-gray-600 hover:to-gray-700 transition-colors text-sm"
-        >
-          Visit Raffle Page
+        <button onClick={() => navigate(`/raffle/${ticket.raffleAddress}`)} className="fancy w-full h-12">
+          <span className="top-key"></span>
+          <span className="text">Visit raffle page</span>
+          <span className="bottom-key-1"></span>
+          <span className="bottom-key-2"></span>
         </button>
         
         {canClaimPrize() && (
-          <button
-            onClick={() => onClaimPrize(ticket)}
-            className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-2 rounded-md hover:from-green-600 hover:to-emerald-700 transition-colors text-sm"
-          >
-            Claim Prize
+          <button onClick={() => onClaimPrize(ticket)} className="fancy h-12">
+            <span className="top-key"></span>
+            <span className="text">Claim prize</span>
+            <span className="bottom-key-1"></span>
+            <span className="bottom-key-2"></span>
           </button>
         )}
         
         {canClaimRefund() && (
-          <button
-            onClick={() => onClaimRefund(ticket)}
-            className="bg-gradient-to-r from-orange-500 to-amber-600 text-white px-3 py-2 rounded-md hover:from-orange-600 hover:to-amber-700 transition-colors text-sm"
-          >
-            Claim Refund
+          <button onClick={() => onClaimRefund(ticket)} className="fancy h-12">
+            <span className="top-key"></span>
+            <span className="text">Claim refund</span>
+            <span className="bottom-key-1"></span>
+            <span className="bottom-key-2"></span>
           </button>
         )}
       </div>
@@ -987,14 +988,6 @@ const ProfilePage = () => {
                 Track activities, manage your raffles, revenue and collections
               </p>
             </div>
-            <button
-              onClick={handleRefresh}
-              disabled={loading}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-md hover:from-blue-600 hover:to-purple-700 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
           </div>
           <div className="mt-4 p-3 bg-muted rounded-lg">
             <p className="text-sm font-medium">Connected Account:</p>
@@ -1115,12 +1108,6 @@ const ProfilePage = () => {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold">Created Raffles</h2>
-                  <button
-                    onClick={() => navigate('/create-raffle')}
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-md hover:from-blue-600 hover:to-purple-700 transition-colors"
-                  >
-                    Create New Raffle
-                  </button>
                 </div>
                 {createdRaffles.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1137,12 +1124,6 @@ const ProfilePage = () => {
                   <div className="text-center py-8">
                     <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground mb-4">You haven't created any raffles yet</p>
-                    <button
-                      onClick={() => navigate('/create-raffle')}
-                      className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-md hover:from-blue-600 hover:to-purple-700 transition-colors"
-                    >
-                      Create Your First Raffle
-                    </button>
                   </div>
                 )}
               </div>
@@ -1211,20 +1192,17 @@ const ProfilePage = () => {
                 </div>
               </div>
               <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setShowRevenueModal(false)}
-                  className="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 text-white px-4 py-2 rounded-md hover:from-gray-600 hover:to-gray-700 transition-colors"
-                >
-                  Close
+                <button onClick={() => setShowRevenueModal(false)} className="fancy flex-1 h-12">
+                  <span className="top-key"></span>
+                  <span className="text">Close</span>
+                  <span className="bottom-key-1"></span>
+                  <span className="bottom-key-2"></span>
                 </button>
-                <button
-                  onClick={() => {
-                    // Handle revenue withdrawal
-                    setShowRevenueModal(false);
-                  }}
-                  className="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white px-4 py-2 rounded-md hover:from-green-600 hover:to-teal-700 transition-colors"
-                >
-                  Withdraw
+                <button onClick={() => { setShowRevenueModal(false); }} className="fancy flex-1 h-12">
+                  <span className="top-key"></span>
+                  <span className="text">Withdraw</span>
+                  <span className="bottom-key-1"></span>
+                  <span className="bottom-key-2"></span>
                 </button>
               </div>
             </div>

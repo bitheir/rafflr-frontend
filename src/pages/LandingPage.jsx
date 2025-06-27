@@ -107,20 +107,25 @@ const RaffleCard = ({ raffle }) => {
             }
           </span>
         </div>
-        {raffle.isPrized && (
+        {raffle.isPrized ? (
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Prize Collection:</span>
             <span className="font-mono">{raffle.prizeCollection?.slice(0, 10)}...</span>
           </div>
+        ) : (
+          <div className="flex justify-between text-sm invisible">
+            <span>_</span>
+            <span>_</span>
+          </div>
         )}
       </div>
       
-      <Button
-        onClick={handleViewRaffle}
-        className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base mt-auto"
-      >
-        Visit Raffle Page
-      </Button>
+      <button onClick={handleViewRaffle} className="fancy w-full mt-auto">
+        <span className="top-key"></span>
+        <span className="text">Visit Raffle Page</span>
+        <span className="bottom-key-1"></span>
+        <span className="bottom-key-2"></span>
+      </button>
     </div>
   );
 };
@@ -154,10 +159,13 @@ const RaffleSection = ({ title, raffles, icon: Icon, stateKey }) => {
           {title} ({raffles.length})
         </h2>
         <button
-          className="text-primary underline text-sm font-medium hover:text-primary/80 transition-colors"
+          className="fancy"
           onClick={() => navigate(`/raffles/${stateKey}`)}
         >
-          View all {title.toLowerCase()}
+          <span className="top-key"></span>
+          <span className="text">View all {title.toLowerCase()}</span>
+          <span className="bottom-key-1"></span>
+          <span className="bottom-key-2"></span>
         </button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 min-w-0">
@@ -348,7 +356,7 @@ const LandingPage = () => {
         <div className="mb-4 text-center">
           <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Rafflr hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
+            Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
           </p>
         </div>
         
@@ -386,7 +394,7 @@ const LandingPage = () => {
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Rafflr hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
+            Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
           </p>
         </div>
         
@@ -396,9 +404,12 @@ const LandingPage = () => {
           <p className="text-muted-foreground mb-6">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+            className="fancy"
           >
-            Try Again
+            <span className="top-key"></span>
+            <span className="text">Try Again</span>
+            <span className="bottom-key-1"></span>
+            <span className="bottom-key-2"></span>
           </button>
         </div>
       </div>
@@ -410,7 +421,7 @@ const LandingPage = () => {
       <div className="mb-4 text-center">
         <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Rafflr hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
+          Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
         </p>
       </div>
 
