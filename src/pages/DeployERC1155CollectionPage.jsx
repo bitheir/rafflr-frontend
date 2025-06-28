@@ -76,7 +76,7 @@ const DeployERC1155CollectionPage = () => {
 
   return (
     <div className="min-h-screen bg-background py-4 pb-16">
-      <PageContainer>
+      <PageContainer className="py-8">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold mb-3">Deploy ERC1155 Prize Collection</h1>
           <p className="text-muted-foreground text-lg">Create a new ERC1155 collection for raffle prizes</p>

@@ -118,7 +118,7 @@ const RafflesByStatePage = () => {
 
   if (!connected) {
     return (
-      <PageContainer>
+      <PageContainer className="py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">{title}</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -130,7 +130,7 @@ const RafflesByStatePage = () => {
   }
   if (loading) {
     return (
-      <PageContainer>
+      <PageContainer className="py-8">
         <div className="text-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-lg text-muted-foreground">Loading {title.toLowerCase()} from blockchain...</p>
@@ -140,7 +140,7 @@ const RafflesByStatePage = () => {
   }
   if (error) {
     return (
-      <PageContainer>
+      <PageContainer className="py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">{title}</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -151,7 +151,7 @@ const RafflesByStatePage = () => {
     );
   }
   return (
-    <PageContainer>
+    <PageContainer className="py-8">
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-4">{title}</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
