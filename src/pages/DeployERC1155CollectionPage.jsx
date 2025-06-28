@@ -5,6 +5,7 @@ import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
+import { PageContainer } from '../components/Layout';
 
 const DeployERC1155CollectionPage = () => {
   const { connected } = useWallet();
@@ -75,7 +76,7 @@ const DeployERC1155CollectionPage = () => {
 
   return (
     <div className="min-h-screen bg-background py-4 pb-16">
-      <div className="container mx-auto px-4">
+      <PageContainer>
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold mb-3">Deploy ERC1155 Prize Collection</h1>
           <p className="text-muted-foreground text-lg">Create a new ERC1155 collection for raffle prizes</p>
@@ -170,7 +171,7 @@ const DeployERC1155CollectionPage = () => {
             </div>
           </form>
         </div>
-      </div>
+      </PageContainer>
     </div>
   );
 };

@@ -308,4 +308,33 @@ const Header = () => {
 
 export { Header };
 
+// Page Container Component for consistent padding
+export const PageContainer = ({ 
+  children, 
+  variant = 'default', // 'default', 'narrow', 'wide', 'profile'
+  className = '' 
+}) => {
+  const getPaddingClasses = () => {
+    switch (variant) {
+      case 'narrow':
+        return 'mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32';
+      case 'wide':
+        return 'container mx-auto px-4';
+      case 'profile':
+        return 'mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 2xl:px-10';
+      case 'default':
+      default:
+        return 'mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32';
+    }
+  };
+
+  const baseClasses = getPaddingClasses();
+  
+  return (
+    <div className={`${baseClasses} ${className}`}>
+      {children}
+    </div>
+  );
+};
+
 

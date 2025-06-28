@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
-import { Trophy } from 'lucide-react';
+import { Trophy, AlertCircle } from 'lucide-react';
 import { ethers } from 'ethers';
 import { RaffleCard } from './LandingPage';
+import { PageContainer } from '../components/Layout';
 
 const WhitelistRafflePage = () => {
   const { connected } = useWallet();
@@ -135,7 +136,7 @@ const WhitelistRafflePage = () => {
 
   if (!connected) {
     return (
-      <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
+      <PageContainer className="py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">Whitelist Raffles</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -149,22 +150,30 @@ const WhitelistRafflePage = () => {
             Please connect your wallet to view and interact with raffles on the blockchain.
           </p>
         </div>
-      </div>
+      </PageContainer>
     );
   }
+
   if (loading) {
     return (
-      <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
+      <PageContainer className="py-8">
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold mb-4">Whitelist Raffles</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Welcome Fren! Get your fair chance to secure a spot on that Whitelist! LFG!!!
+          </p>
+        </div>
         <div className="text-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-lg text-muted-foreground">Loading whitelist raffles from blockchain...</p>
         </div>
-      </div>
+      </PageContainer>
     );
   }
+
   if (error) {
     return (
-      <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
+      <PageContainer className="py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">Whitelist Raffles</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -177,11 +186,12 @@ const WhitelistRafflePage = () => {
           <p className="text-muted-foreground mb-6">{error}</p>
           <button onClick={() => window.location.reload()} className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">Try Again</button>
         </div>
-      </div>
+      </PageContainer>
     );
   }
+
   return (
-    <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 pb-16">
+    <PageContainer className="pb-16">
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-4">Whitelist Raffles</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -189,21 +199,21 @@ const WhitelistRafflePage = () => {
         </p>
       </div>
       <div className="mt-16">
-      {raffles.length === 0 ? (
-        <div className="text-center py-16">
-          <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-2xl font-semibold mb-2">No Whitelist Raffles Available</h3>
-          <p className="text-muted-foreground">There are currently no whitelist raffles. Check back later!</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {raffles.filter(r => r.state === 'pending' || r.state === 'active').map(raffle => (
-            <RaffleCard key={raffle.id} raffle={raffle} />
-          ))}
-        </div>
-      )}
+        {raffles.length === 0 ? (
+          <div className="text-center py-16">
+            <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-2xl font-semibold mb-2">No Whitelist Raffles Available</h3>
+            <p className="text-muted-foreground">There are currently no whitelist raffles. Check back later!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {[...raffles.filter(r => r.state === 'pending' || r.state === 'active')].reverse().map(raffle => (
+              <RaffleCard key={raffle.id} raffle={raffle} />
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

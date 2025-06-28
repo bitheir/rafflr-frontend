@@ -139,37 +139,38 @@ const RoyaltyAdjustmentComponent = () => {
       <div className="space-y-6">
         {/* Collection Lookup Section */}
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1">Collection Address</label>
               <input
                 type="text"
                 value={collectionData.address}
                 onChange={(e) => handleChange('address', e.target.value)}
-                className="w-full px-3 border border-border rounded-md bg-background h-12"
+                className="w-full px-3 py-2 border border-border rounded-md bg-background"
                 placeholder="0x..."
               />
             </div>
-            <div className="md:col-span-1">
+            <div>
               <label className="block text-sm font-medium mb-1">Collection Type</label>
               <select
                 value={collectionData.type}
                 onChange={(e) => handleChange('type', e.target.value)}
-                className="w-full px-3 border border-border rounded-md bg-background h-12"
+                className="w-full px-3 py-2 border border-border rounded-md bg-background"
               >
                 <option value="erc721">ERC721</option>
                 <option value="erc1155">ERC1155</option>
               </select>
             </div>
-            <div className="md:col-span-1 flex">
-              <button onClick={loadCollectionInfo} disabled={loadingInfo || !connected} className="fancy h-12 w-full">
-                <span className="top-key"></span>
-                <span className="text">{loadingInfo ? 'Loading...' : 'Load Collection Info'}</span>
-                <span className="bottom-key-1"></span>
-                <span className="bottom-key-2"></span>
-              </button>
-            </div>
           </div>
+
+          <button
+            onClick={loadCollectionInfo}
+            disabled={loadingInfo || !connected}
+            className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors disabled:opacity-50"
+          >
+            <Search className="h-4 w-4" />
+            {loadingInfo ? 'Loading...' : 'Load Collection Info'}
+          </button>
         </div>
 
         {/* Collection Info Display */}
@@ -223,7 +224,7 @@ const RoyaltyAdjustmentComponent = () => {
                   step="0.01"
                   value={collectionData.royaltyPercentage}
                   onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
-                  className="w-full px-3 border border-border rounded-md bg-background"
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
                   placeholder="2.5"
                 />
               </div>
@@ -235,20 +236,19 @@ const RoyaltyAdjustmentComponent = () => {
                   type="text"
                   value={collectionData.royaltyRecipient}
                   onChange={(e) => handleChange('royaltyRecipient', e.target.value)}
-                  className="w-full px-3 border border-border rounded-md bg-background"
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
                   placeholder="0x..."
                 />
               </div>
             </div>
 
-            <button onClick={handleUpdateRoyalty} disabled={loading || !connected} className="fancy w-full h-12">
-              <span className="top-key"></span>
-              <span className="text flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                {loading ? 'Updating...' : 'Update Royalty Settings'}
-              </span>
-              <span className="bottom-key-1"></span>
-              <span className="bottom-key-2"></span>
+            <button
+              onClick={handleUpdateRoyalty}
+              disabled={loading || !connected}
+              className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              {loading ? 'Updating...' : 'Update Royalty Settings'}
             </button>
           </div>
         )}

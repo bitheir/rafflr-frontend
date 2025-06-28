@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
+import { ethers } from 'ethers';
 import { RaffleCard } from './LandingPage';
 import { Trophy, Users, Clock, Ticket } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { PageContainer } from '../components/Layout';
 
 const stateTitleMap = {
   active: { title: 'Active Raffles', icon: Clock },
@@ -21,7 +22,6 @@ const RafflesByStatePage = () => {
   const [raffles, setRaffles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchRaffles = async () => {
@@ -118,45 +118,47 @@ const RafflesByStatePage = () => {
 
   if (!connected) {
     return (
-      <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
+      <PageContainer>
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">{title}</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Please connect your wallet to view raffles.
           </p>
         </div>
-      </div>
+      </PageContainer>
     );
   }
   if (loading) {
     return (
-      <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
+      <PageContainer>
         <div className="text-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-lg text-muted-foreground">Loading {title.toLowerCase()} from blockchain...</p>
         </div>
-      </div>
+      </PageContainer>
     );
   }
   if (error) {
     return (
-      <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
+      <PageContainer>
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">{title}</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             {error}
           </p>
         </div>
-      </div>
+      </PageContainer>
     );
   }
   return (
-    <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 pb-16">
+    <PageContainer>
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-4">{title}</h1>
-        {state === 'pending' && (
-          <p className="text-muted-foreground mb-4">Be Prepared! These raffles will be <code>Active</code> soon!</p>
-        )}
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          {state === 'pending' 
+            ? 'Be Prepared! These raffles will be Active soon!' 
+            : `All ${title.toLowerCase()} on the platform`}
+        </p>
       </div>
       <div className="mt-16">
         {raffles.length === 0 ? (
@@ -173,7 +175,7 @@ const RafflesByStatePage = () => {
           </div>
         )}
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

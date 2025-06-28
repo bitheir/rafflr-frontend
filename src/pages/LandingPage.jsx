@@ -5,6 +5,7 @@ import { useContract } from '../contexts/ContractContext';
 import { useNavigate } from 'react-router-dom';
 import { ethers } from 'ethers';
 import { Button } from '../components/ui/button';
+import { PageContainer } from '../components/Layout';
 
 const RaffleCard = ({ raffle }) => {
   const navigate = useNavigate();
@@ -107,25 +108,20 @@ const RaffleCard = ({ raffle }) => {
             }
           </span>
         </div>
-        {raffle.isPrized ? (
+        {raffle.isPrized && (
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Prize Collection:</span>
             <span className="font-mono">{raffle.prizeCollection?.slice(0, 10)}...</span>
           </div>
-        ) : (
-          <div className="flex justify-between text-sm invisible">
-            <span>_</span>
-            <span>_</span>
-          </div>
         )}
       </div>
       
-      <button onClick={handleViewRaffle} className="fancy w-full mt-auto">
-        <span className="top-key"></span>
-        <span className="text">Visit Raffle Page</span>
-        <span className="bottom-key-1"></span>
-        <span className="bottom-key-2"></span>
-      </button>
+      <Button
+        onClick={handleViewRaffle}
+        className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base mt-auto"
+      >
+        Visit Raffle Page
+      </Button>
     </div>
   );
 };
@@ -159,13 +155,10 @@ const RaffleSection = ({ title, raffles, icon: Icon, stateKey }) => {
           {title} ({raffles.length})
         </h2>
         <button
-          className="fancy"
+          className="text-primary underline text-sm font-medium hover:text-primary/80 transition-colors"
           onClick={() => navigate(`/raffles/${stateKey}`)}
         >
-          <span className="top-key"></span>
-          <span className="text">View all {title.toLowerCase()}</span>
-          <span className="bottom-key-1"></span>
-          <span className="bottom-key-2"></span>
+          View all {title.toLowerCase()}
         </button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 min-w-0">
@@ -352,7 +345,7 @@ const LandingPage = () => {
   // Show wallet connection prompt if not connected
   if (!connected) {
     return (
-      <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-4">
+      <PageContainer className="py-4">
         <div className="mb-4 text-center">
           <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -372,25 +365,25 @@ const LandingPage = () => {
             </p>
           </div>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   if (loading) {
     return (
-      <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
+      <PageContainer className="py-8">
         <div className="text-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-lg text-muted-foreground">Loading raffles from blockchain...</p>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   // Show error message if there's an error
   if (error) {
     return (
-      <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
+      <PageContainer className="py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -404,20 +397,17 @@ const LandingPage = () => {
           <p className="text-muted-foreground mb-6">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="fancy"
+            className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
           >
-            <span className="top-key"></span>
-            <span className="text">Try Again</span>
-            <span className="bottom-key-1"></span>
-            <span className="bottom-key-2"></span>
+            Try Again
           </button>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-4 pb-16">
+    <PageContainer className="py-4 pb-16">
       <div className="mb-4 text-center">
         <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -442,7 +432,7 @@ const LandingPage = () => {
           </p>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

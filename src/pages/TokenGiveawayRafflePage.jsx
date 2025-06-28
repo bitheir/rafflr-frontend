@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
-import { Coins } from 'lucide-react';
+import { Coins, AlertCircle } from 'lucide-react';
 import { ethers } from 'ethers';
-import RaffleCard from './LandingPage';
+import { RaffleCard } from './LandingPage';
+import { PageContainer } from '../components/Layout';
 
 const TokenGiveawayRafflePage = () => {
   const { connected } = useWallet();
@@ -135,11 +136,11 @@ const TokenGiveawayRafflePage = () => {
 
   if (!connected) {
     return (
-      <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
+      <PageContainer className="py-8">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-4">Token Giveaway Raffles</h1>
+          <h1 className="text-4xl font-bold mb-4">ETH & Token Giveaways</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Feeling lucky? Here are some juicy token giveaways to try!
+            Win ETH and tokens through fair, transparent raffles powered by blockchain technology!
           </p>
         </div>
         <div className="text-center py-16">
@@ -149,26 +150,32 @@ const TokenGiveawayRafflePage = () => {
             Please connect your wallet to view and interact with raffles on the blockchain.
           </p>
         </div>
-      </div>
+      </PageContainer>
     );
   }
   if (loading) {
     return (
-      <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
+      <PageContainer className="py-8">
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold mb-4">ETH & Token Giveaways</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Win ETH and tokens through fair, transparent raffles powered by blockchain technology!
+          </p>
+        </div>
         <div className="text-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-lg text-muted-foreground">Loading token giveaway raffles from blockchain...</p>
         </div>
-      </div>
+      </PageContainer>
     );
   }
   if (error) {
     return (
-      <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 py-8">
+      <PageContainer className="py-8">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-4">Token Giveaway Raffles</h1>
+          <h1 className="text-4xl font-bold mb-4">ETH & Token Giveaways</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Feeling lucky? Here are some juicy token giveaways to try!
+            Win ETH and tokens through fair, transparent raffles powered by blockchain technology!
           </p>
         </div>
         <div className="text-center py-16">
@@ -177,15 +184,15 @@ const TokenGiveawayRafflePage = () => {
           <p className="text-muted-foreground mb-6">{error}</p>
           <button onClick={() => window.location.reload()} className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">Try Again</button>
         </div>
-      </div>
+      </PageContainer>
     );
   }
   return (
-    <div className="mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32 pb-16">
+    <PageContainer className="pb-16">
       <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold mb-4">Token Giveaway Raffles</h1>
+        <h1 className="text-4xl font-bold mb-4">ETH & Token Giveaways</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Feeling lucky? Here are some juicy token giveaways to try!
+          Win ETH and tokens through fair, transparent raffles powered by blockchain technology!
         </p>
       </div>
       <div className="mt-16">
@@ -197,13 +204,13 @@ const TokenGiveawayRafflePage = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {raffles.filter(r => r.state === 'pending' || r.state === 'active').map(raffle => (
+          {[...raffles.filter(r => r.state === 'pending' || r.state === 'active')].reverse().map(raffle => (
             <RaffleCard key={raffle.id} raffle={raffle} />
           ))}
         </div>
       )}
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

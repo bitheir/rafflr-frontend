@@ -9,8 +9,6 @@ import ProfilePage from './pages/ProfilePage';
 import CreateRafflePage from './pages/CreateRafflePage';
 import DeployERC1155CollectionPage from './pages/DeployERC1155CollectionPage';
 import RaffleDetailPage from './pages/RaffleDetailPage';
-import AdminDashboard from './components/dashboards/AdminDashboard';
-import OperatorDashboard from './components/dashboards/OperatorDashboard';
 import WhitelistRafflePage from './pages/WhitelistRafflePage';
 import NFTPrizedRafflePage from './pages/NFTPrizedRafflePage';
 import TokenGiveawayRafflePage from './pages/TokenGiveawayRafflePage';
@@ -38,8 +36,6 @@ function App() {
                   <Route path="/create-raffle" element={<CreateRafflePage />} />
                   <Route path="/deploy-erc1155-collection" element={<DeployERC1155CollectionPage />} />
                   <Route path="/raffle/:raffleAddress" element={<RaffleDetailPage />} />
-                  <Route path="/admin" element={<AdminDashboard />} />
-                  <Route path="/operator" element={<OperatorDashboard />} />
                   <Route path="/whitelist-raffles" element={<WhitelistRafflePage />} />
                   <Route path="/nft-prized-raffles" element={<NFTPrizedRafflePage />} />
                   <Route path="/token-giveaway-raffles" element={<TokenGiveawayRafflePage />} />
