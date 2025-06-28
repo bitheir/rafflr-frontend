@@ -368,7 +368,7 @@ export const PageContainer = ({
       case 'narrow':
         return 'mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32';
       case 'wide':
-        return 'container mx-auto px-4';
+        return 'container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 2xl:px-20';
       case 'profile':
         return 'mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 2xl:px-10';
       case 'default':
