@@ -140,7 +140,7 @@ const NFTPrizedRafflePage = () => {
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">NFT-Prized Raffles</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Win exclusive NFTs from your favorite collections through fair, transparent raffles!
+            Win exclusive JPEGs from cool collections through fair and transparent raffles!
           </p>
         </div>
         <div className="text-center py-16">
@@ -159,7 +159,7 @@ const NFTPrizedRafflePage = () => {
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">NFT-Prized Raffles</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Win exclusive NFTs from your favorite collections through fair, transparent raffles!
+            Win exclusive JPEGs from cool collections through fair and transparent raffles!
           </p>
         </div>
         <div className="text-center py-16">
@@ -175,7 +175,7 @@ const NFTPrizedRafflePage = () => {
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">NFT-Prized Raffles</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Win exclusive NFTs from your favorite collections through fair, transparent raffles!
+            Win exclusive JPEGs from cool collections through fair and transparent raffles!
           </p>
         </div>
         <div className="text-center py-16">
@@ -192,7 +192,7 @@ const NFTPrizedRafflePage = () => {
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-4">NFT-Prized Raffles</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Win exclusive NFTs from your favorite collections through fair, transparent raffles!
+          Win exclusive JPEGs from cool collections through fair and transparent raffles!
         </p>
       </div>
       <div className="mt-16">
