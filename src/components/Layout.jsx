@@ -324,7 +324,7 @@ export const PageContainer = ({
         return 'mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 2xl:px-10';
       case 'default':
       default:
-        return 'mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 2xl:px-32';
+        return 'mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 2xl:px-10';
     }
   };
 
