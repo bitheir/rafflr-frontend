@@ -320,7 +320,7 @@ const Header = () => {
                           className="flex items-center gap-2 px-4 py-2 text-sm font-normal hover:bg-primary/10 transition-colors rounded-lg w-full m-0"
                         >
                           {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                          <span>Light/Dark</span>
+                          <span>Theme</span>
                         </button>
                         <div className="my-0 border-t border-border/40" />
                         <button
