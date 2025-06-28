@@ -5,9 +5,12 @@ import { useTheme } from '../contexts/ThemeContext';
 import WalletModal from './wallet/WalletModal';
 import { Link, useNavigate } from 'react-router-dom';
 import { useContract } from '../contexts/ContractContext';
+import { ethers } from 'ethers';
+import { contractABIs } from '../contracts/contractABIs';
+import { CONTRACT_ADDRESSES } from '../constants';
 
 const Header = () => {
-  const { connected, address, formatAddress, disconnect } = useWallet();
+  const { connected, address, formatAddress, disconnect, provider } = useWallet();
   const { isDark, toggleTheme } = useTheme();
   const { contracts, getContractInstance } = useContract();
   const [showWalletModal, setShowWalletModal] = useState(false);
@@ -23,6 +26,7 @@ const Header = () => {
   const [mouseInDropdown, setMouseInDropdown] = useState(false);
   const [inputFullyOpen, setInputFullyOpen] = useState(false);
   const searchInputWrapperRef = useRef(null);
+  const hasFetchedRaffles = useRef(false);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -49,32 +53,60 @@ const Header = () => {
   // Fetch all raffles once for searching
   useEffect(() => {
     const fetchAllRaffles = async () => {
-      if (!contracts.raffleManager) return;
+      if (!provider) {
+        return;
+      }
+      
+      // Don't refetch if we already have raffles
+      if (hasFetchedRaffles.current) {
+        return;
+      }
+      
       try {
-        const registeredRaffles = contracts.raffleManager.getAllRaffles
-          ? await contracts.raffleManager.getAllRaffles()
-          : await contracts.raffleManager.getRegisteredRaffles();
+        const raffleManagerAddress = CONTRACT_ADDRESSES.raffleManager;
+        const raffleManagerContract = new ethers.Contract(raffleManagerAddress, contractABIs.raffleManager, provider);
+        
+        const registeredRaffles = await raffleManagerContract.getAllRaffles();
+        
+        if (!registeredRaffles || registeredRaffles.length === 0) {
+          setAllRaffles([]);
+          hasFetchedRaffles.current = true;
+          return;
+        }
+        
         const rafflePromises = registeredRaffles.map(async (raffleAddress) => {
           try {
-            const raffleContract = getContractInstance(raffleAddress, 'raffle');
-            if (!raffleContract) return null;
+            if (!provider) {
+              return null;
+            }
+            
+            const raffleContract = new ethers.Contract(raffleAddress, contractABIs.raffle, provider);
             const name = await raffleContract.name();
             return {
               address: raffleAddress,
               name: name
             };
-          } catch {
+          } catch (error) {
             return null;
           }
         });
         const raffleData = await Promise.all(rafflePromises);
-        setAllRaffles(raffleData.filter(r => r));
-      } catch {
+        const validRaffles = raffleData.filter(r => r);
+        setAllRaffles(validRaffles);
+        hasFetchedRaffles.current = true;
+      } catch (error) {
+        console.error('Error fetching raffles for search:', error);
         setAllRaffles([]);
+        hasFetchedRaffles.current = true;
       }
     };
     fetchAllRaffles();
-  }, [contracts, getContractInstance]);
+  }, [provider]);
+
+  // Monitor allRaffles changes
+  useEffect(() => {
+    // Removed debug logging
+  }, [allRaffles]);
 
   // Debounced search
   useEffect(() => {
@@ -159,8 +191,15 @@ const Header = () => {
                   </button>
                   <div
                     ref={searchInputWrapperRef}
-                    className="overflow-hidden transition-all duration-300 rounded-md bg-background"
-                    style={{ width: showSearch ? '16rem' : '0', marginLeft: '0', position: 'relative', display: 'inline-block', verticalAlign: 'middle' }}
+                    className="overflow-visible transition-all duration-300 rounded-md bg-background"
+                    style={{ 
+                      width: showSearch ? '16rem' : '0', 
+                      marginLeft: '0', 
+                      position: 'relative', 
+                      display: 'inline-block', 
+                      verticalAlign: 'middle',
+                      overflow: 'visible'
+                    }}
                   >
                     <input
                       ref={searchInputRef}
@@ -178,36 +217,46 @@ const Header = () => {
                       }}
                       placeholder="Search raffle name or address..."
                       value={searchTerm}
-                      onChange={e => setSearchTerm(e.target.value)}
+                      onChange={e => {
+                        const newValue = e.target.value;
+                        setSearchTerm(newValue);
+                      }}
                       autoFocus={inputFullyOpen}
                     />
                     {/* Search Results Dropdown - now relative to input and always 100% width */}
                     {showSearch && (
                       <div
                         className="absolute left-0 top-full mt-1 z-50 w-full"
-                        style={{ boxSizing: 'border-box' }}
+                        style={{ 
+                          boxSizing: 'border-box',
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          right: 0,
+                          zIndex: 9999
+                        }}
                         onMouseEnter={() => setMouseInDropdown(true)}
                         onMouseLeave={() => setMouseInDropdown(false)}
                       >
                         {searchLoading && (
-                          <div className="p-2 text-muted-foreground text-xs">Searching...</div>
+                          <div className="p-2 text-muted-foreground text-xs bg-muted border border-border rounded">Searching...</div>
                         )}
                         {!searchLoading && searchResults.length > 0 && (
                           <div className="bg-card border border-border rounded-md max-h-60 overflow-y-auto shadow-lg">
                             {searchResults.map(r => (
                               <div
                                 key={r.address}
-                                className="px-3 py-2 hover:bg-muted cursor-pointer text-sm"
+                                className="px-3 py-2 hover:bg-muted cursor-pointer text-sm border-b border-border/20"
                                 onMouseDown={() => handleSearchResultClick(r.address)}
                               >
-                                <div className="font-semibold">{r.name}</div>
+                                <div className="font-semibold text-foreground">{r.name}</div>
                                 <div className="text-xs text-muted-foreground font-mono">{r.address}</div>
                               </div>
                             ))}
                           </div>
                         )}
                         {!searchLoading && searchTerm && searchResults.length === 0 && (
-                          <div className="p-2 text-muted-foreground text-xs">No results found.</div>
+                          <div className="p-2 text-muted-foreground text-xs bg-muted border border-border rounded">No results found.</div>
                         )}
                       </div>
                     )}
