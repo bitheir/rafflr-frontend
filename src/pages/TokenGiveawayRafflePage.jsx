@@ -140,7 +140,7 @@ const TokenGiveawayRafflePage = () => {
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">ETH & Token Giveaways</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Win ETH and tokens through fair, transparent raffles powered by blockchain technology!
+            Feeling lucky? Here are some 'cash' giveaways you should try!
           </p>
         </div>
         <div className="text-center py-16">
@@ -159,7 +159,7 @@ const TokenGiveawayRafflePage = () => {
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">ETH & Token Giveaways</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Win ETH and tokens through fair, transparent raffles powered by blockchain technology!
+            Feeling lucky? Here are some 'cash' giveaways you should try!
           </p>
         </div>
         <div className="text-center py-16">
@@ -175,7 +175,7 @@ const TokenGiveawayRafflePage = () => {
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">ETH & Token Giveaways</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Win ETH and tokens through fair, transparent raffles powered by blockchain technology!
+            Feeling lucky? Here are some 'cash' giveaways you should try!
           </p>
         </div>
         <div className="text-center py-16">
@@ -192,7 +192,7 @@ const TokenGiveawayRafflePage = () => {
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-4">ETH & Token Giveaways</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Win ETH and tokens through fair, transparent raffles powered by blockchain technology!
+          Feeling lucky? Here are some 'cash' giveaways you should try!
         </p>
       </div>
       <div className="mt-16">
