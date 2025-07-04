@@ -6,11 +6,25 @@ import { useNavigate } from 'react-router-dom';
 import { ethers } from 'ethers';
 import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
+import { categorizeRaffles } from '../utils/raffleUtils';
+
+const RAFFLE_STATE_LABELS = [
+  'Pending',
+  'Active',
+  'Ended',
+  'Drawing',
+  'Completed',
+  'Deleted',
+  'Activation Failed',
+  'All Prizes Claimed',
+  'Unengaged'
+];
 
 const RaffleCard = ({ raffle }) => {
   const navigate = useNavigate();
   const [timeLabel, setTimeLabel] = useState('');
   const [timeRemaining, setTimeRemaining] = useState('');
+  const [erc20Symbol, setErc20Symbol] = useState('');
 
   useEffect(() => {
     let interval;
@@ -45,22 +59,68 @@ const RaffleCard = ({ raffle }) => {
     return () => clearInterval(interval);
   }, [raffle]);
 
+  // ERC20 symbol lookup - optimized to reduce RPC calls
+  useEffect(() => {
+    let isMounted = true;
+    const fetchSymbol = async () => {
+      if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero) {
+        // Use a static cache to avoid redundant lookups
+        if (!window.__erc20SymbolCache) window.__erc20SymbolCache = {};
+        if (window.__erc20SymbolCache[raffle.erc20PrizeToken]) {
+          setErc20Symbol(window.__erc20SymbolCache[raffle.erc20PrizeToken]);
+          return;
+        }
+        
+        // Add a small delay to prevent overwhelming the RPC provider
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        try {
+          const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
+          const erc20Abi = ["function symbol() view returns (string)"];
+          const contract = new ethers.Contract(raffle.erc20PrizeToken, erc20Abi, provider);
+          const symbol = await contract.symbol();
+          if (isMounted) {
+            setErc20Symbol(symbol);
+            window.__erc20SymbolCache[raffle.erc20PrizeToken] = symbol;
+          }
+        } catch (error) {
+          console.warn('Failed to fetch ERC20 symbol:', error);
+          if (isMounted) setErc20Symbol('TOKEN');
+        }
+      }
+    };
+    fetchSymbol();
+    return () => { isMounted = false; };
+  }, [raffle.erc20PrizeToken]);
+
   const getStatusBadge = () => {
-    // Use the actual contract state instead of time-based logic
-    switch (raffle.state) {
-      case 'pending':
-        return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">Pending</span>;
-      case 'active':
-        return <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Active</span>;
-      case 'drawing':
-        return <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">Drawing</span>;
-      case 'completed':
-        return <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Completed</span>;
-      case 'ended':
-        return <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Ended</span>;
-      default:
-        return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">Unknown</span>;
-    }
+    const label = RAFFLE_STATE_LABELS[raffle.stateNum] || 'Unknown';
+    const colorMap = {
+      'Pending': 'bg-yellow-100 text-yellow-800',
+      'Active': 'bg-green-100 text-green-800',
+      'Ended': 'bg-red-100 text-red-800',
+      'Drawing': 'bg-purple-100 text-purple-800',
+      'Completed': 'bg-blue-100 text-blue-800',
+      'Deleted': 'bg-gray-200 text-gray-800',
+      'Activation Failed': 'bg-red-200 text-red-900',
+      'All Prizes Claimed': 'bg-blue-200 text-blue-900',
+      'Unengaged': 'bg-gray-100 text-gray-800',
+      'Unknown': 'bg-gray-100 text-gray-800'
+    };
+    return <span className={`px-2 py-1 rounded-full text-xs ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
+  };
+
+  const getPrizeType = () => {
+    if (raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0)) return 'ETH';
+    if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) return 'ERC20';
+    if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) return 'NFT Prize';
+    return raffle.isPrized ? 'Token Giveaway' : 'Whitelist';
+  };
+
+  const getPrizeAmount = () => {
+    if (raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0)) return `${ethers.utils.formatEther(raffle.ethPrizeAmount)} ETH`;
+    if (raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) return `${ethers.utils.formatUnits(raffle.erc20PrizeAmount, 18)} ${erc20Symbol || 'TOKEN'}`;
+    return null;
   };
 
   const handleViewRaffle = () => {
@@ -68,7 +128,7 @@ const RaffleCard = ({ raffle }) => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 hover:shadow-lg transition-shadow flex flex-col h-full">
+    <div className="bg-background border border-border rounded-lg p-4 hover:shadow-lg transition-shadow flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold truncate flex-1 mr-2">{raffle.name}</h3>
         {getStatusBadge()}
@@ -76,42 +136,39 @@ const RaffleCard = ({ raffle }) => {
       
       <div className="space-y-2 mb-4">
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Creator:</span>
+          <span className="text-gray-500 dark:text-gray-400">Creator:</span>
           <span className="font-mono">{raffle.creator?.slice(0, 10)}...</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Ticket Price:</span>
+          <span className="text-gray-500 dark:text-gray-400">Ticket Price:</span>
           <span>{ethers.utils.formatEther(raffle.ticketPrice || '0')} ETH</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Tickets Sold:</span>
-          <span>{raffle.ticketsSold || 0} / {raffle.ticketLimit}</span>
+          <span className="text-gray-500 dark:text-gray-400">Tickets Sold:</span>
+          <span>{raffle.ticketsSold > 0 ? `${raffle.ticketsSold} / ${raffle.ticketLimit}` : 'N/A'}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Winners:</span>
+          <span className="text-gray-500 dark:text-gray-400">Winners:</span>
           <span>{raffle.winnersCount}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">{timeLabel}:</span>
+          <span className="text-gray-500 dark:text-gray-400">{timeLabel}:</span>
           <span>{timeRemaining}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Type:</span>
-          <span className={`px-2 py-1 rounded-full text-xs ${
-            raffle.isPrized 
-              ? (raffle.prizeCollection ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800')
-              : 'bg-gray-100 text-gray-800'
-          }`}>
-            {
-              !raffle.isPrized ? 'Whitelist' :
-              (raffle.prizeCollection ? 'NFT-Prized' : 'Token Giveaway')
-            }
-          </span>
+          <span className="text-gray-500 dark:text-gray-400">Type:</span>
+          <span className={`px-2 py-1 rounded-full text-sm`}>{getPrizeType()}</span>
         </div>
-        {raffle.isPrized && (
+        {(getPrizeType() === 'NFT Prize') && (
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Prize Collection:</span>
+            <span className="text-gray-500 dark:text-gray-400">Prize Collection:</span>
             <span className="font-mono">{raffle.prizeCollection?.slice(0, 10)}...</span>
+          </div>
+        )}
+        {(getPrizeType() === 'ERC20' || getPrizeType() === 'ETH') && (
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-500 dark:text-gray-400">Prize Amount:</span>
+            <span>{getPrizeAmount()}</span>
           </div>
         )}
       </div>
@@ -139,9 +196,9 @@ const RaffleSection = ({ title, raffles, icon: Icon, stateKey }) => {
           <Icon className="h-5 w-5" />
           {title}
         </h2>
-        <div className="text-center py-8 bg-muted/20 rounded-lg">
-          <Icon className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-          <p className="text-muted-foreground">No {title.toLowerCase()} at the moment</p>
+        <div className="text-center py-8 bg-gray-100 dark:bg-gray-800 rounded-lg">
+          <Icon className="h-12 w-12 text-gray-500 dark:text-gray-400 mx-auto mb-2" />
+          <p className="text-gray-500 dark:text-gray-400">No {title.toLowerCase()} at the moment</p>
         </div>
       </div>
     );
@@ -155,7 +212,7 @@ const RaffleSection = ({ title, raffles, icon: Icon, stateKey }) => {
           {title} ({raffles.length})
         </h2>
         <button
-          className="text-primary underline text-sm font-medium hover:text-primary/80 transition-colors"
+          className="text-blue-600 dark:text-blue-500 underline text-sm font-medium hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
           onClick={() => navigate(`/raffles/${stateKey}`)}
         >
           View all {title.toLowerCase()}
@@ -171,6 +228,8 @@ const RaffleSection = ({ title, raffles, icon: Icon, stateKey }) => {
 };
 
 const LandingPage = () => {
+  console.log('LandingPage component is rendering...'); // Debug log
+  
   const { connected } = useWallet();
   const { contracts, getContractInstance, onContractEvent } = useContract();
   const [raffles, setRaffles] = useState([]);
@@ -196,19 +255,31 @@ const LandingPage = () => {
     }
     setError(null);
     try {
+      if (!contracts.raffleManager.getAllRaffles) {
+        setError('RaffleManager contract does not support getAllRaffles.');
+        setRaffles([]);
+        return;
+      }
       const registeredRaffles = await contracts.raffleManager.getAllRaffles();
-      if (registeredRaffles.length === 0) {
+      if (!registeredRaffles || registeredRaffles.length === 0) {
         setRaffles([]);
         setError('No raffles found on the blockchain');
         return;
       }
-      const rafflePromises = registeredRaffles.map(async (raffleAddress) => {
+      
+      // Limit the number of raffles to fetch to prevent rate limiting
+      const maxRafflesToFetch = 20;
+      const rafflesToFetch = registeredRaffles.slice(0, maxRafflesToFetch);
+      
+      const rafflePromises = rafflesToFetch.map(async (raffleAddress) => {
         try {
           const raffleContract = getContractInstance(raffleAddress, 'raffle');
           if (!raffleContract) {
             console.error(`Failed to get raffle contract instance for ${raffleAddress}`);
             return null;
           }
+          
+          // Batch all the basic raffle data calls
           const [
             name,
             creator,
@@ -220,7 +291,10 @@ const LandingPage = () => {
             maxTicketsPerParticipant,
             isPrized,
             prizeCollection,
-            state
+            stateNum,
+            erc20PrizeToken,
+            erc20PrizeAmount,
+            ethPrizeAmount
           ] = await Promise.all([
             raffleContract.name(),
             raffleContract.creator(),
@@ -232,31 +306,25 @@ const LandingPage = () => {
             raffleContract.maxTicketsPerParticipant(),
             raffleContract.isPrized(),
             raffleContract.prizeCollection(),
-            raffleContract.state()
+            raffleContract.state(),
+            raffleContract.erc20PrizeToken(),
+            raffleContract.erc20PrizeAmount(),
+            raffleContract.ethPrizeAmount()
           ]);
-          let ticketsSold = 0;
-          try {
-            let count = 0;
-            while (true) {
-              try {
-                await raffleContract.participants(count);
-                count++;
-              } catch {
-                break;
-              }
-            }
-            ticketsSold = count;
-          } catch (error) {
-            console.warn('Could not fetch participants count for', raffleAddress, error);
-          }
+          
+          // Skip participant count to reduce RPC calls - this was causing too many requests
+          // We'll show tickets sold as "N/A" or implement a different approach later
+          const ticketsSold = 0; // Temporarily set to 0 to avoid rate limiting
+          
           let raffleState;
-          if (state === 0) { raffleState = 'pending'; }
-          else if (state === 1) { raffleState = 'active'; }
-          else if (state === 2) { raffleState = 'drawing'; }
-          else if (state === 3) { raffleState = 'completed'; }
-          else if (state === 4) { raffleState = 'completed'; }
-          else if (state === 5) { raffleState = 'ended'; }
+          if (stateNum === 0) { raffleState = 'pending'; }
+          else if (stateNum === 1) { raffleState = 'active'; }
+          else if (stateNum === 2) { raffleState = 'drawing'; }
+          else if (stateNum === 3) { raffleState = 'completed'; }
+          else if (stateNum === 4) { raffleState = 'completed'; }
+          else if (stateNum === 5) { raffleState = 'ended'; }
           else { raffleState = 'ended'; }
+          
           return {
             id: raffleAddress,
             name,
@@ -271,13 +339,17 @@ const LandingPage = () => {
             maxTicketsPerParticipant: maxTicketsPerParticipant.toNumber(),
             isPrized,
             prizeCollection: !!isPrized ? prizeCollection : null,
-            state: raffleState
+            stateNum: stateNum,
+            erc20PrizeToken,
+            erc20PrizeAmount,
+            ethPrizeAmount
           };
         } catch (error) {
           console.error(`Error fetching raffle data for ${raffleAddress}:`, error);
           return null;
         }
       });
+      
       const raffleData = await Promise.all(rafflePromises);
       const validRaffles = raffleData.filter(raffle => raffle !== null);
       setRaffles(validRaffles);
@@ -286,7 +358,13 @@ const LandingPage = () => {
       }
     } catch (error) {
       console.error('Error fetching raffles:', error);
-      setError('Failed to fetch raffles from blockchain. Please check your network connection and try again.');
+      
+      // Check if it's a rate limiting error
+      if (error.message && error.message.includes('Too Many Requests')) {
+        setError('Rate limit exceeded. Please wait a moment and refresh the page, or consider upgrading your RPC provider.');
+      } else {
+        setError('Failed to fetch raffles from blockchain. Please check your network connection and try again.');
+      }
       setRaffles([]);
     } finally {
       if (isBackground) {
@@ -299,7 +377,8 @@ const LandingPage = () => {
 
   useEffect(() => {
     fetchRaffles();
-    const interval = setInterval(() => fetchRaffles(true), 30000);
+    // Increase polling interval to 2 minutes to reduce rate limiting
+    const interval = setInterval(() => fetchRaffles(true), 120000);
     return () => clearInterval(interval);
   }, [fetchRaffles]);
 
@@ -322,25 +401,8 @@ const LandingPage = () => {
     };
   }, [onContractEvent, fetchRaffles]);
 
-  // Categorize raffles by state
-  const categorizeRaffles = () => {
-    // Use actual contract state instead of time-based logic
-    const pending = raffles.filter(raffle => raffle.state === 'pending');
-    
-    const active = raffles.filter(raffle => raffle.state === 'active');
-    
-    const ended = raffles.filter(raffle => raffle.state === 'ended');
-    
-    const drawing = raffles.filter(raffle => raffle.state === 'drawing');
-    
-    const completed = raffles.filter(raffle => 
-      raffle.state === 'completed' || raffle.state === 'allPrizesClaimed'
-    );
-
-    return { pending, active, ended, drawing, completed };
-  };
-
-  const { pending, active, ended, drawing, completed } = categorizeRaffles();
+  // Categorize raffles by state and duration
+  const { pending, active, ended, drawing, completed } = categorizeRaffles(raffles);
 
   // Show wallet connection prompt if not connected
   if (!connected) {
@@ -348,15 +410,15 @@ const LandingPage = () => {
       <PageContainer className="py-4">
         <div className="mb-4 text-center">
           <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
             Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
           </p>
         </div>
         
         <div className="text-center py-16">
-          <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <Trophy className="h-16 w-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
           <h3 className="text-2xl font-semibold mb-2">Connect Your Wallet</h3>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-gray-500 dark:text-gray-400 mb-6">
             Please connect your wallet to view and interact with raffles on the blockchain.
           </p>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
@@ -373,8 +435,8 @@ const LandingPage = () => {
     return (
       <PageContainer className="py-8">
         <div className="text-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg text-muted-foreground">Loading raffles from blockchain...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-500 dark:text-gray-400">Loading raffles from blockchain...</p>
         </div>
       </PageContainer>
     );
@@ -386,18 +448,18 @@ const LandingPage = () => {
       <PageContainer className="py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
             Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
           </p>
         </div>
         
         <div className="text-center py-16">
-          <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <Trophy className="h-16 w-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
           <h3 className="text-2xl font-semibold mb-2">Unable to Load Raffles</h3>
-          <p className="text-muted-foreground mb-6">{error}</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-500 transition-colors"
           >
             Try Again
           </button>
@@ -410,7 +472,7 @@ const LandingPage = () => {
     <PageContainer className="py-4 pb-16">
       <div className="mb-4 text-center">
         <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
           Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
         </p>
       </div>
@@ -425,9 +487,9 @@ const LandingPage = () => {
 
       {raffles.length === 0 && !loading && !error && (
         <div className="text-center py-16">
-          <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <Trophy className="h-16 w-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
           <h3 className="text-2xl font-semibold mb-2">No Raffles Available</h3>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             There are currently no raffles available on the blockchain. Check back later or create your own!
           </p>
         </div>

@@ -5,6 +5,7 @@ import { Trophy, Gift, AlertCircle } from 'lucide-react';
 import { ethers } from 'ethers';
 import { RaffleCard } from './LandingPage';
 import { PageContainer } from '../components/Layout';
+import { filterActiveRaffles } from '../utils/raffleUtils';
 
 const NFTPrizedRafflePage = () => {
   const { connected } = useWallet();
@@ -31,7 +32,12 @@ const NFTPrizedRafflePage = () => {
     }
     setError(null);
     try {
-      const registeredRaffles = await contracts.raffleManager.getAllRaffles ? await contracts.raffleManager.getAllRaffles() : await contracts.raffleManager.getRegisteredRaffles();
+      if (!contracts.raffleManager.getAllRaffles) {
+        setError('RaffleManager contract does not support getAllRaffles.');
+        setRaffles([]);
+        return;
+      }
+      const registeredRaffles = await contracts.raffleManager.getAllRaffles();
       if (!registeredRaffles || registeredRaffles.length === 0) {
         setRaffles([]);
         setError('No raffles found on the blockchain');
@@ -41,7 +47,7 @@ const NFTPrizedRafflePage = () => {
         try {
           const raffleContract = getContractInstance(raffleAddress, 'raffle');
           if (!raffleContract) return null;
-          const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrized, prizeCollection, state] = await Promise.all([
+          const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrized, prizeCollection, stateNum, erc20PrizeToken, erc20PrizeAmount, ethPrizeAmount] = await Promise.all([
             raffleContract.name(),
             raffleContract.creator(),
             raffleContract.startTime(),
@@ -52,7 +58,10 @@ const NFTPrizedRafflePage = () => {
             raffleContract.maxTicketsPerParticipant(),
             raffleContract.isPrized(),
             raffleContract.prizeCollection(),
-            raffleContract.state()
+            raffleContract.state(),
+            raffleContract.erc20PrizeToken(),
+            raffleContract.erc20PrizeAmount(),
+            raffleContract.ethPrizeAmount()
           ]);
           let ticketsSold = 0;
           try {
@@ -67,13 +76,6 @@ const NFTPrizedRafflePage = () => {
             }
             ticketsSold = count;
           } catch {}
-          let raffleState;
-          if (state === 0) raffleState = 'pending';
-          else if (state === 1) raffleState = 'active';
-          else if (state === 2) raffleState = 'drawing';
-          else if (state === 3 || state === 4) raffleState = 'completed';
-          else if (state === 5) raffleState = 'ended';
-          else raffleState = 'ended';
           return {
             id: raffleAddress,
             name,
@@ -88,14 +90,24 @@ const NFTPrizedRafflePage = () => {
             maxTicketsPerParticipant: maxTicketsPerParticipant.toNumber(),
             isPrized,
             prizeCollection: !!isPrized ? prizeCollection : null,
-            state: raffleState
+            stateNum,
+            erc20PrizeToken,
+            erc20PrizeAmount,
+            ethPrizeAmount
           };
         } catch {
           return null;
         }
       });
       const raffleData = await Promise.all(rafflePromises);
-      const validRaffles = raffleData.filter(r => r && r.isPrized && r.prizeCollection);
+      const validRaffles = raffleData.filter(r =>
+        r &&
+        r.isPrized &&
+        r.prizeCollection &&
+        r.prizeCollection !== ethers.constants.AddressZero &&
+        (!r.erc20PrizeAmount || r.erc20PrizeAmount.isZero?.() || r.erc20PrizeAmount === '0') &&
+        (!r.ethPrizeAmount || r.ethPrizeAmount.isZero?.() || r.ethPrizeAmount === '0')
+      );
       setRaffles(validRaffles);
       if (validRaffles.length === 0) setError('No NFT-prized raffles found.');
     } catch (e) {
@@ -204,7 +216,7 @@ const NFTPrizedRafflePage = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[...raffles.filter(r => r.state === 'pending' || r.state === 'active')].reverse().map(raffle => (
+          {[...filterActiveRaffles(raffles)].reverse().map(raffle => (
             <RaffleCard key={raffle.id} raffle={raffle} />
           ))}
         </div>

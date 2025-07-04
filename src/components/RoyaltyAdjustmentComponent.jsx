@@ -245,7 +245,7 @@ const RoyaltyAdjustmentComponent = () => {
             <button
               onClick={handleUpdateRoyalty}
               disabled={loading || !connected}
-              className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <Settings className="h-4 w-4" />
               {loading ? 'Updating...' : 'Update Royalty Settings'}

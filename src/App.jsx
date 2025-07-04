@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { WalletProvider } from './contexts/WalletContext';
 import { ContractProvider } from './contexts/ContractContext';
-import { ThemeProvider } from './contexts/ThemeContext';
 import { Header } from './components/Layout';
 import LandingPage from './pages/LandingPage';
 import ProfilePage from './pages/ProfilePage';
@@ -13,16 +12,16 @@ import WhitelistRafflePage from './pages/WhitelistRafflePage';
 import NFTPrizedRafflePage from './pages/NFTPrizedRafflePage';
 import TokenGiveawayRafflePage from './pages/TokenGiveawayRafflePage';
 import RafflesByStatePage from './pages/RafflesByStatePage';
+import TestSocialFeatures from './components/TestSocialFeatures';
 import './App.css';
 
 function App() {
-  // Set dark theme as default
+  // Always set dark theme
   useEffect(() => {
     document.documentElement.classList.add('dark');
   }, []);
 
   return (
-    <ThemeProvider>
       <WalletProvider>
         <ContractProvider>
           <Router>
@@ -40,13 +39,13 @@ function App() {
                   <Route path="/nft-prized-raffles" element={<NFTPrizedRafflePage />} />
                   <Route path="/token-giveaway-raffles" element={<TokenGiveawayRafflePage />} />
                   <Route path="/raffles/:state" element={<RafflesByStatePage />} />
+                <Route path="/test-social" element={<TestSocialFeatures />} />
                 </Routes>
               </main>
             </div>
           </Router>
         </ContractProvider>
       </WalletProvider>
-    </ThemeProvider>
   );
 }
 

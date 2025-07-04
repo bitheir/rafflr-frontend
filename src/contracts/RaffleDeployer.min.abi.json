@@ -8,6 +8,8 @@
   ], "name": "PrizeCollectionCreated", "type": "event" },
   {
     "inputs": [
+      {
+        "components": [
       { "internalType": "string", "name": "name", "type": "string" },
       { "internalType": "uint256", "name": "startTime", "type": "uint256" },
       { "internalType": "uint256", "name": "duration", "type": "uint256" },
@@ -18,7 +20,7 @@
       { "internalType": "uint256", "name": "customTicketPrice", "type": "uint256" },
       { "internalType": "bool", "name": "erc721Drop", "type": "bool" },
       { "internalType": "address", "name": "prizeCollection", "type": "address" },
-      { "internalType": "enum PrizeTypes.Standard", "name": "standard", "type": "uint8" },
+          { "internalType": "uint8", "name": "standard", "type": "uint8" },
       { "internalType": "uint256", "name": "prizeTokenId", "type": "uint256" },
       { "internalType": "uint256", "name": "amountPerWinner", "type": "uint256" },
       { "internalType": "string", "name": "collectionName", "type": "string" },
@@ -31,6 +33,11 @@
       { "internalType": "address", "name": "erc20PrizeToken", "type": "address" },
       { "internalType": "uint256", "name": "erc20PrizeAmount", "type": "uint256" },
       { "internalType": "uint256", "name": "ethPrizeAmount", "type": "uint256" }
+        ],
+        "internalType": "struct RaffleDeployer.RaffleParams",
+        "name": "p",
+        "type": "tuple"
+      }
     ],
     "name": "createRaffle",
     "outputs": [

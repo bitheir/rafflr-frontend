@@ -47,7 +47,7 @@ const RafflesByStatePage = () => {
           try {
             const raffleContract = getContractInstance(raffleAddress, 'raffle');
             if (!raffleContract) return null;
-            const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrized, prizeCollection, stateNum] = await Promise.all([
+            const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrized, prizeCollection, stateNum, erc20PrizeToken, erc20PrizeAmount, ethPrizeAmount] = await Promise.all([
               raffleContract.name(),
               raffleContract.creator(),
               raffleContract.startTime(),
@@ -58,7 +58,10 @@ const RafflesByStatePage = () => {
               raffleContract.maxTicketsPerParticipant(),
               raffleContract.isPrized(),
               raffleContract.prizeCollection(),
-              raffleContract.state()
+              raffleContract.state(),
+              raffleContract.erc20PrizeToken(),
+              raffleContract.erc20PrizeAmount(),
+              raffleContract.ethPrizeAmount()
             ]);
             let ticketsSold = 0;
             try {
@@ -94,16 +97,58 @@ const RafflesByStatePage = () => {
               maxTicketsPerParticipant: maxTicketsPerParticipant.toNumber(),
               isPrized,
               prizeCollection: !!isPrized ? prizeCollection : null,
-              state: raffleState
+              stateNum,
+              state: raffleState,
+              erc20PrizeToken,
+              erc20PrizeAmount,
+              ethPrizeAmount
             };
           } catch {
             return null;
           }
         });
         const raffleData = await Promise.all(rafflePromises);
-        const validRaffles = raffleData.filter(r => r && r.state === state);
-        setRaffles(validRaffles.reverse());
-        if (validRaffles.length === 0) setError(`No ${stateTitleMap[state]?.title?.toLowerCase() || state} raffles found.`);
+        const validRaffles = raffleData.filter(r => r !== null);
+        
+        // Apply duration-based logic for categorization
+        const now = Math.floor(Date.now() / 1000);
+        const isDurationElapsed = (raffle) => {
+          return (raffle.startTime + raffle.duration) <= now;
+        };
+
+        // Filter raffles based on requested state and duration
+        let filteredRaffles = validRaffles;
+        if (state === 'ended') {
+          // Show raffles whose duration has elapsed but are not completed
+          filteredRaffles = validRaffles.filter(raffle => 
+            isDurationElapsed(raffle) && 
+            raffle.stateNum !== 3 && 
+            raffle.stateNum !== 4
+          );
+        } else if (state === 'active') {
+          // Show active raffles whose duration hasn't elapsed
+          filteredRaffles = validRaffles.filter(raffle => 
+            raffle.stateNum === 1 && !isDurationElapsed(raffle)
+          );
+        } else if (state === 'pending') {
+          // Show pending raffles whose duration hasn't elapsed
+          filteredRaffles = validRaffles.filter(raffle => 
+            raffle.stateNum === 0 && !isDurationElapsed(raffle)
+          );
+        } else if (state === 'drawing') {
+          // Show drawing raffles whose duration hasn't elapsed
+          filteredRaffles = validRaffles.filter(raffle => 
+            raffle.stateNum === 2 && !isDurationElapsed(raffle)
+          );
+        } else if (state === 'completed') {
+          // Show completed raffles (state 3 or 4)
+          filteredRaffles = validRaffles.filter(raffle => 
+            raffle.stateNum === 3 || raffle.stateNum === 4
+          );
+        }
+        
+        setRaffles(filteredRaffles.reverse());
+        if (filteredRaffles.length === 0) setError(`No ${stateTitleMap[state]?.title?.toLowerCase() || state} raffles found.`);
       } catch (e) {
         setError('Failed to fetch raffles');
         setRaffles([]);
@@ -121,7 +166,7 @@ const RafflesByStatePage = () => {
       <PageContainer className="py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">{title}</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
             Please connect your wallet to view raffles.
           </p>
         </div>
@@ -132,8 +177,8 @@ const RafflesByStatePage = () => {
     return (
       <PageContainer className="py-8">
         <div className="text-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg text-muted-foreground">Loading {title.toLowerCase()} from blockchain...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-500 dark:text-gray-400">Loading {title.toLowerCase()} from blockchain...</p>
         </div>
       </PageContainer>
     );
@@ -143,7 +188,7 @@ const RafflesByStatePage = () => {
       <PageContainer className="py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">{title}</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
             {error}
           </p>
         </div>
@@ -154,7 +199,7 @@ const RafflesByStatePage = () => {
     <PageContainer className="py-8">
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-4">{title}</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
           {state === 'pending' 
             ? 'Be Prepared! These raffles will be Active soon!' 
             : `All ${title.toLowerCase()} on the platform`}
@@ -163,9 +208,9 @@ const RafflesByStatePage = () => {
       <div className="mt-16">
         {raffles.length === 0 ? (
           <div className="text-center py-16">
-            <Icon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <Icon className="h-16 w-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
             <h3 className="text-2xl font-semibold mb-2">No {title}</h3>
-            <p className="text-muted-foreground">There are currently no {title.toLowerCase()}. Check back later!</p>
+            <p className="text-gray-500 dark:text-gray-400">There are currently no {title.toLowerCase()}. Check back later!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 min-w-0">

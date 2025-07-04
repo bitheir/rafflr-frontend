@@ -5,11 +5,17 @@ import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
+import SocialTaskCreator from '../components/SocialTaskCreator';
+import { SocialTaskService } from '../lib/socialTaskService';
+import { Switch } from '../components/ui/switch';
+import { Label } from '../components/ui/label';
 
 function ERC1155DropForm() {
   const { connected, address } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
+  const [socialTasks, setSocialTasks] = useState([]);
+  const [showSocialTasks, setShowSocialTasks] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     collectionAddress: '',
@@ -27,6 +33,10 @@ function ERC1155DropForm() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleSocialTasksChange = (tasks) => {
+    setSocialTasks(tasks);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!connected || !contracts.raffleDeployer) {
@@ -39,29 +49,58 @@ function ERC1155DropForm() {
       const duration = parseInt(formData.duration) * 60;
       const ticketPrice = formData.ticketPrice ? ethers.utils.parseEther(formData.ticketPrice) : 0;
       const unitsPerWinner = formData.unitsPerWinner ? parseInt(formData.unitsPerWinner) : 1;
-      const result = await executeTransaction(
-        contracts.raffleDeployer.createRaffle,
-        formData.name,
+      const params = {
+        name: formData.name,
         startTime,
         duration,
-        parseInt(formData.ticketLimit),
-        parseInt(formData.winnersCount),
-        parseInt(formData.maxTicketsPerParticipant),
-        false, // isPrized
-        ticketPrice,
-        false, // erc721Drop (always false for ERC1155)
-        formData.collectionAddress,
-        1, // standard (ERC1155)
-        parseInt(formData.tokenId),
-        unitsPerWinner,
-        '', '', '',
-        address,
-        0,
-        ethers.constants.AddressZero,
-        0,
-        ethers.constants.AddressZero,
-        0,
-        0
+        ticketLimit: parseInt(formData.ticketLimit),
+        winnersCount: parseInt(formData.winnersCount),
+        maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+        isPrized: true,
+        customTicketPrice: ticketPrice,
+        erc721Drop: false,
+        prizeCollection: formData.collectionAddress,
+        standard: 1, // ERC1155
+        prizeTokenId: parseInt(formData.tokenId),
+        amountPerWinner: unitsPerWinner,
+        collectionName: '',
+        collectionSymbol: '',
+        collectionBaseURI: '',
+        creator: address,
+        royaltyPercentage: 0,
+        royaltyRecipient: ethers.constants.AddressZero,
+        maxSupply: 0,
+        erc20PrizeToken: ethers.constants.AddressZero,
+        erc20PrizeAmount: 0,
+        ethPrizeAmount: 0
+      };
+      const result = await executeTransaction(
+        contracts.raffleDeployer.createRaffle,
+        [
+          params.name,
+          params.startTime,
+          params.duration,
+          params.ticketLimit,
+          params.winnersCount,
+          params.maxTicketsPerParticipant,
+          params.isPrized,
+          params.customTicketPrice,
+          params.erc721Drop,
+          params.prizeCollection,
+          params.standard,
+          params.prizeTokenId,
+          params.amountPerWinner,
+          params.collectionName,
+          params.collectionSymbol,
+          params.collectionBaseURI,
+          params.creator,
+          params.royaltyPercentage,
+          params.royaltyRecipient,
+          params.maxSupply,
+          params.erc20PrizeToken,
+          params.erc20PrizeAmount,
+          params.ethPrizeAmount
+        ]
       );
       if (result.success) {
         alert('ERC1155 Collection raffle created successfully!');
@@ -202,6 +241,35 @@ function ERC1155DropForm() {
             required
           />
         </div>
+        
+        {/* Social Media Tasks Toggle */}
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="enable-social-tasks"
+            checked={showSocialTasks}
+            onCheckedChange={setShowSocialTasks}
+          />
+          <Label htmlFor="enable-social-tasks" className="text-base font-medium">
+            Enable social media tasks for this raffle
+          </Label>
+        </div>
+
+        {/* Social Media Tasks Section */}
+        {showSocialTasks && (
+          <div className="mt-8">
+            <SocialTaskCreator 
+              onTasksChange={handleSocialTasksChange}
+              initialTasks={socialTasks}
+              visible={showSocialTasks}
+              onSubmit={(tasks) => {
+                // Placeholder: show tasks in alert for now
+                alert('Tasks to save: ' + JSON.stringify(tasks, null, 2));
+                // In production, you would call SocialTaskService.createRaffleTasks(raffleAddress, tasks)
+              }}
+            />
+          </div>
+        )}
+
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -220,6 +288,8 @@ const PrizedRaffleForm = () => {
   const { connected, address } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
+  const [socialTasks, setSocialTasks] = useState([]);
+  const [showSocialTasks, setShowSocialTasks] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     startTime: '',
@@ -247,6 +317,10 @@ const PrizedRaffleForm = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleSocialTasksChange = (tasks) => {
+    setSocialTasks(tasks);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!connected || !contracts.raffleDeployer) {
@@ -262,62 +336,91 @@ const PrizedRaffleForm = () => {
         ethers.utils.parseEther(formData.customTicketPrice) : 0;
 
       let result;
+      let params;
 
       if (formData.prizeSource === 'new') {
-        // Create raffle with new collection
-        result = await executeTransaction(
-          contracts.raffleDeployer.createRaffle,
-          formData.name,
+        // New ERC721 collection
+        params = {
+          name: formData.name,
           startTime,
           duration,
-          parseInt(formData.ticketLimit),
-          parseInt(formData.winnersCount),
-          parseInt(formData.maxTicketsPerParticipant),
-          true, // isPrized
-          customTicketPrice,
-          false, // useMintableWorkflow
-          ethers.constants.AddressZero, // prizeCollection
-          0, // standard (ERC721)
-          0, // prizeTokenId
-          1, // amountPerWinner
-          formData.collectionName,
-          formData.collectionSymbol,
-          formData.baseURI,
-          address, // creator
-          parseInt(formData.royaltyPercentage || '0'),
-          ethers.constants.AddressZero, // royaltyRecipient (will be set by contract)
-          parseInt(formData.maxSupply || formData.winnersCount)
-        );
+          ticketLimit: parseInt(formData.ticketLimit),
+          winnersCount: parseInt(formData.winnersCount),
+          maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+          isPrized: true,
+          customTicketPrice: customTicketPrice,
+          erc721Drop: false,
+          prizeCollection: ethers.constants.AddressZero,
+          standard: 0, // ERC721
+          prizeTokenId: 0,
+          amountPerWinner: 1,
+          collectionName: formData.collectionName,
+          collectionSymbol: formData.collectionSymbol,
+          collectionBaseURI: formData.baseURI,
+          creator: address,
+          royaltyPercentage: parseInt(formData.royaltyPercentage || '0'),
+          royaltyRecipient: ethers.constants.AddressZero,
+          maxSupply: parseInt(formData.maxSupply || formData.winnersCount),
+          erc20PrizeToken: ethers.constants.AddressZero,
+          erc20PrizeAmount: 0,
+          ethPrizeAmount: 0
+        };
       } else {
-        // Create raffle with existing collection
+        // Existing collection (ERC721 or ERC1155)
         const standard = formData.prizeType === 'erc721' ? 0 : 1;
-        
-        result = await executeTransaction(
-          contracts.raffleDeployer.createRaffle,
-          formData.name,
+        params = {
+          name: formData.name,
           startTime,
           duration,
-          parseInt(formData.ticketLimit),
-          parseInt(formData.winnersCount),
-          parseInt(formData.maxTicketsPerParticipant),
-          true, // isPrized
-          customTicketPrice,
-          formData.useMintableWorkflow,
-          formData.prizeCollection,
-          standard,
-          formData.useMintableWorkflow ? 0 : parseInt(formData.prizeTokenId),
-          parseInt(formData.amountPerWinner),
-          '', '', '', // collection creation params (not used for existing)
-          address, // creator
-          0,
-          ethers.constants.AddressZero,
-          0
-        );
+          ticketLimit: parseInt(formData.ticketLimit),
+          winnersCount: parseInt(formData.winnersCount),
+          maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+          isPrized: true,
+          customTicketPrice: customTicketPrice,
+          erc721Drop: formData.useMintableWorkflow,
+          prizeCollection: formData.prizeCollection,
+          standard: standard,
+          prizeTokenId: formData.useMintableWorkflow ? 0 : parseInt(formData.prizeTokenId),
+          amountPerWinner: parseInt(formData.amountPerWinner),
+          collectionName: '',
+          collectionSymbol: '',
+          collectionBaseURI: '',
+          creator: address,
+          royaltyPercentage: 0,
+          royaltyRecipient: ethers.constants.AddressZero,
+          maxSupply: 0,
+          erc20PrizeToken: ethers.constants.AddressZero,
+          erc20PrizeAmount: 0,
+          ethPrizeAmount: 0
+        };
+      }
+
+      result = { success: false };
+      try {
+        const tx = await contracts.raffleDeployer.createRaffle(params);
+        const receipt = await tx.wait();
+        result = { success: true, receipt, hash: tx.hash };
+      } catch (error) {
+        result = { success: false, error: error.message };
       }
 
       if (result.success) {
+        // Save social media tasks to database
+        if (socialTasks.length > 0) {
+          try {
+            const taskResult = await SocialTaskService.createRaffleTasks(
+              result.raffleAddress || 'pending',
+              socialTasks
+            );
+            if (!taskResult.success) {
+              console.warn('Failed to save social media tasks:', taskResult.error);
+            }
+          } catch (taskError) {
+            console.warn('Error saving social media tasks:', taskError);
+          }
+        }
+
         alert('Prized raffle created successfully!');
-        // Reset form
         setFormData({
           name: '',
           startTime: '',
@@ -339,6 +442,7 @@ const PrizedRaffleForm = () => {
           maxSupply: '',
           royaltyPercentage: ''
         });
+        setSocialTasks([]);
       } else {
         throw new Error(result.error);
       }
@@ -614,6 +718,34 @@ const PrizedRaffleForm = () => {
           )}
         </div>
 
+        {/* Social Media Tasks Toggle */}
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="enable-social-tasks"
+            checked={showSocialTasks}
+            onCheckedChange={setShowSocialTasks}
+          />
+          <Label htmlFor="enable-social-tasks" className="text-base font-medium">
+            Enable social media tasks for this raffle
+          </Label>
+        </div>
+
+        {/* Social Media Tasks Section */}
+        {showSocialTasks && (
+          <div className="mt-8">
+            <SocialTaskCreator 
+              onTasksChange={handleSocialTasksChange}
+              initialTasks={socialTasks}
+              visible={showSocialTasks}
+              onSubmit={(tasks) => {
+                // Placeholder: show tasks in alert for now
+                alert('Tasks to save: ' + JSON.stringify(tasks, null, 2));
+                // In production, you would call SocialTaskService.createRaffleTasks(raffleAddress, tasks)
+              }}
+            />
+          </div>
+        )}
+
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -632,6 +764,8 @@ const NonPrizedRaffleForm = () => {
   const { connected, address } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
+  const [socialTasks, setSocialTasks] = useState([]);
+  const [showSocialTasks, setShowSocialTasks] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     startTime: '',
@@ -643,6 +777,10 @@ const NonPrizedRaffleForm = () => {
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSocialTasksChange = (tasks) => {
+    setSocialTasks(tasks);
   };
 
   const handleSubmit = async (e) => {
@@ -777,6 +915,34 @@ const NonPrizedRaffleForm = () => {
           </div>
         </div>
 
+        {/* Social Media Tasks Toggle */}
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="enable-social-tasks"
+            checked={showSocialTasks}
+            onCheckedChange={setShowSocialTasks}
+          />
+          <Label htmlFor="enable-social-tasks" className="text-base font-medium">
+            Enable social media tasks for this raffle
+          </Label>
+        </div>
+
+        {/* Social Media Tasks Section */}
+        {showSocialTasks && (
+          <div className="mt-8">
+            <SocialTaskCreator 
+              onTasksChange={handleSocialTasksChange}
+              initialTasks={socialTasks}
+              visible={showSocialTasks}
+              onSubmit={(tasks) => {
+                // Placeholder: show tasks in alert for now
+                alert('Tasks to save: ' + JSON.stringify(tasks, null, 2));
+                // In production, you would call SocialTaskService.createRaffleTasks(raffleAddress, tasks)
+              }}
+            />
+          </div>
+        )}
+
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -795,17 +961,23 @@ const WhitelistRaffleForm = () => {
   const { connected, address } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
+  const [socialTasks, setSocialTasks] = useState([]);
+  const [showSocialTasks, setShowSocialTasks] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     startTime: '',
     duration: '',
     ticketLimit: '',
     winnersCount: '',
-    maxTicketsPerParticipant: '',
+    maxTicketsPerParticipant: ''
   });
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSocialTasksChange = (tasks) => {
+    setSocialTasks(tasks);
   };
 
   const handleSubmit = async (e) => {
@@ -820,31 +992,39 @@ const WhitelistRaffleForm = () => {
       const duration = parseInt(formData.duration) * 60; // Convert minutes to seconds
 
       // All prize params are zero/empty for whitelist raffle
-      const result = await executeTransaction(
-        contracts.raffleDeployer.createRaffle,
-        formData.name, // name
-        startTime, // startTime
-        duration, // duration
-        parseInt(formData.ticketLimit), // ticketLimit
-        parseInt(formData.winnersCount), // winnersCount
-        parseInt(formData.maxTicketsPerParticipant), // maxTicketsPerParticipant
-        false, // isPrized (whitelist raffles are non-prized)
-        0, // customTicketPrice (use global ticket price)
-        false, // erc721Drop
-        ethers.constants.AddressZero, // prizeCollection
-        0, // standard
-        0, // prizeTokenId
-        0, // amountPerWinner
-        '', '', '', // collectionName, collectionSymbol, collectionBaseURI
-        address, // creator
-        0, // royaltyPercentage
-        ethers.constants.AddressZero, // royaltyRecipient
-        0, // maxSupply
-        ethers.constants.AddressZero, // erc20PrizeToken
-        0, // erc20PrizeAmount
-        0 // ethPrizeAmount
-      );
-
+      const params = {
+        name: formData.name,
+        startTime,
+        duration,
+        ticketLimit: parseInt(formData.ticketLimit),
+        winnersCount: parseInt(formData.winnersCount),
+        maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+        isPrized: false,
+        customTicketPrice: 0,
+        erc721Drop: false,
+        prizeCollection: ethers.constants.AddressZero,
+        standard: 0,
+        prizeTokenId: 0,
+        amountPerWinner: 0,
+        collectionName: '',
+        collectionSymbol: '',
+        collectionBaseURI: '',
+        creator: address,
+        royaltyPercentage: 0,
+        royaltyRecipient: ethers.constants.AddressZero,
+        maxSupply: 0,
+        erc20PrizeToken: ethers.constants.AddressZero,
+        erc20PrizeAmount: 0,
+        ethPrizeAmount: 0
+      };
+      let result = { success: false };
+      try {
+        const tx = await contracts.raffleDeployer.createRaffle(params);
+        const receipt = await tx.wait();
+        result = { success: true, receipt, hash: tx.hash };
+      } catch (error) {
+        result = { success: false, error: error.message };
+      }
       if (result.success) {
         alert('Whitelist raffle created successfully!');
         setFormData({
@@ -853,7 +1033,7 @@ const WhitelistRaffleForm = () => {
           duration: '',
           ticketLimit: '',
           winnersCount: '',
-          maxTicketsPerParticipant: '',
+          maxTicketsPerParticipant: ''
         });
       } else {
         throw new Error(result.error);
@@ -935,6 +1115,35 @@ const WhitelistRaffleForm = () => {
             />
           </div>
         </div>
+
+        {/* Social Media Tasks Toggle */}
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="enable-social-tasks"
+            checked={showSocialTasks}
+            onCheckedChange={setShowSocialTasks}
+          />
+          <Label htmlFor="enable-social-tasks" className="text-base font-medium">
+            Enable social media tasks for this raffle
+          </Label>
+        </div>
+
+        {/* Social Media Tasks Section */}
+        {showSocialTasks && (
+          <div className="mt-8">
+            <SocialTaskCreator 
+              onTasksChange={handleSocialTasksChange}
+              initialTasks={socialTasks}
+              visible={showSocialTasks}
+              onSubmit={(tasks) => {
+                // Placeholder: show tasks in alert for now
+                alert('Tasks to save: ' + JSON.stringify(tasks, null, 2));
+                // In production, you would call SocialTaskService.createRaffleTasks(raffleAddress, tasks)
+              }}
+            />
+          </div>
+        )}
+
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -953,6 +1162,8 @@ const NewERC721DropForm = () => {
   const { connected, address } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
+  const [socialTasks, setSocialTasks] = useState([]);
+  const [showSocialTasks, setShowSocialTasks] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     startTime: '',
@@ -972,6 +1183,10 @@ const NewERC721DropForm = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleSocialTasksChange = (tasks) => {
+    setSocialTasks(tasks);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!connected || !contracts.raffleDeployer) {
@@ -986,38 +1201,41 @@ const NewERC721DropForm = () => {
       const maxSupply = formData.maxSupply ? parseInt(formData.maxSupply) : parseInt(formData.winnersCount);
       // Multiply by 100 to match contract expectations (e.g., 5% -> 500)
       const royaltyPercentage = formData.royaltyPercentage ? parseInt(formData.royaltyPercentage) * 100 : 0;
-
-      // Defensive: always use AddressZero for prizeCollection
       const prizeCollection = ethers.constants.AddressZero;
-
-      // New ERC721 collection raffle
-      const result = await executeTransaction(
-        contracts.raffleDeployer.createRaffle,
-        formData.name,
+      // Build struct object
+      const params = {
+        name: formData.name,
         startTime,
         duration,
-        parseInt(formData.ticketLimit),
-        parseInt(formData.winnersCount),
-        parseInt(formData.maxTicketsPerParticipant),
-        true, // isPrized (NFT drop is prized)
+        ticketLimit: parseInt(formData.ticketLimit),
+        winnersCount: parseInt(formData.winnersCount),
+        maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+        isPrized: true,
         customTicketPrice,
-        false, // erc721Drop (false for new collection deployment)
-        prizeCollection, // always AddressZero for new collection
-        0, // standard (ERC721)
-        0, // prizeTokenId (not used for new collection)
-        1, // amountPerWinner (default 1 for ERC721)
-        formData.collectionName,
-        formData.collectionSymbol,
-        formData.baseURI,
-        address,
+        erc721Drop: false,
+        prizeCollection,
+        standard: 0, // ERC721
+        prizeTokenId: 0,
+        amountPerWinner: 1,
+        collectionName: formData.collectionName,
+        collectionSymbol: formData.collectionSymbol,
+        collectionBaseURI: formData.baseURI,
+        creator: address,
         royaltyPercentage,
-        address,
+        royaltyRecipient: address,
         maxSupply,
-        ethers.constants.AddressZero,
-        0,
-        0
-      );
-
+        erc20PrizeToken: ethers.constants.AddressZero,
+        erc20PrizeAmount: 0,
+        ethPrizeAmount: 0
+      };
+      let result = { success: false };
+      try {
+        const tx = await contracts.raffleDeployer.createRaffle(params);
+        const receipt = await tx.wait();
+        result = { success: true, receipt, hash: tx.hash };
+      } catch (error) {
+        result = { success: false, error: error.message };
+      }
       if (result.success) {
         alert('New ERC721 Collection raffle created successfully!');
         setFormData({
@@ -1178,6 +1396,35 @@ const NewERC721DropForm = () => {
             />
           </div>
         </div>
+        
+        {/* Social Media Tasks Toggle */}
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="enable-social-tasks"
+            checked={showSocialTasks}
+            onCheckedChange={setShowSocialTasks}
+          />
+          <Label htmlFor="enable-social-tasks" className="text-base font-medium">
+            Enable social media tasks for this raffle
+          </Label>
+        </div>
+
+        {/* Social Media Tasks Section */}
+        {showSocialTasks && (
+          <div className="mt-8">
+            <SocialTaskCreator 
+              onTasksChange={handleSocialTasksChange}
+              initialTasks={socialTasks}
+              visible={showSocialTasks}
+              onSubmit={(tasks) => {
+                // Placeholder: show tasks in alert for now
+                alert('Tasks to save: ' + JSON.stringify(tasks, null, 2));
+                // In production, you would call SocialTaskService.createRaffleTasks(raffleAddress, tasks)
+              }}
+            />
+          </div>
+        )}
+
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -1196,6 +1443,8 @@ function ExistingERC721DropForm() {
   const { connected, address } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
+  const [socialTasks, setSocialTasks] = useState([]);
+  const [showSocialTasks, setShowSocialTasks] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     collection: '',
@@ -1209,6 +1458,10 @@ function ExistingERC721DropForm() {
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSocialTasksChange = (tasks) => {
+    setSocialTasks(tasks);
   };
 
   const validate = () => {
@@ -1231,38 +1484,44 @@ function ExistingERC721DropForm() {
       alert('Please connect your wallet and ensure contracts are configured');
       return;
     }
-    
     setLoading(true);
     try {
       const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
       const duration = parseInt(formData.duration) * 60;
       const ticketPrice = formData.ticketPrice ? ethers.utils.parseEther(formData.ticketPrice) : 0;
-      
-      const result = await executeTransaction(
-        contracts.raffleDeployer.createRaffle,
-        formData.name,
+      const params = {
+        name: formData.name,
         startTime,
         duration,
-        parseInt(formData.ticketLimit),
-        parseInt(formData.winnersCount),
-        parseInt(formData.maxTicketsPerUser),
-        true, // isPrized (existing collection is prized)
-        ticketPrice,
-        true, // erc721Drop (true for existing collection mintable workflow)
-        formData.collection.trim(), // prizeCollection (existing collection address)
-        0, // standard (ERC721)
-        0, // prizeTokenId (not used for existing collection)
-        1, // amountPerWinner (default 1 for ERC721)
-        '', '', '', // collection creation params (not used for existing)
-        address, // creator
-        0, // royaltyPercentage
-        ethers.constants.AddressZero, // royaltyRecipient
-        0, // maxSupply
-        ethers.constants.AddressZero, // erc20PrizeToken
-        0, // erc20PrizeAmount
-        0 // ethPrizeAmount
-      );
-      
+        ticketLimit: parseInt(formData.ticketLimit),
+        winnersCount: parseInt(formData.winnersCount),
+        maxTicketsPerParticipant: parseInt(formData.maxTicketsPerUser),
+        isPrized: true,
+        customTicketPrice: ticketPrice,
+        erc721Drop: true,
+        prizeCollection: formData.collection.trim(),
+        standard: 0, // ERC721
+        prizeTokenId: 0,
+        amountPerWinner: 1,
+        collectionName: '',
+        collectionSymbol: '',
+        collectionBaseURI: '',
+        creator: address,
+        royaltyPercentage: 0,
+        royaltyRecipient: ethers.constants.AddressZero,
+        maxSupply: 0,
+        erc20PrizeToken: ethers.constants.AddressZero,
+        erc20PrizeAmount: 0,
+        ethPrizeAmount: 0
+      };
+      let result = { success: false };
+      try {
+        const tx = await contracts.raffleDeployer.createRaffle(params);
+        const receipt = await tx.wait();
+        result = { success: true, receipt, hash: tx.hash };
+      } catch (error) {
+        result = { success: false, error: error.message };
+      }
       if (result.success) {
         alert('Existing ERC721 Collection raffle created successfully!');
         setFormData({
@@ -1382,6 +1641,34 @@ function ExistingERC721DropForm() {
             required
           />
         </div>
+        {/* Social Media Tasks Toggle */}
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="enable-social-tasks"
+            checked={showSocialTasks}
+            onCheckedChange={setShowSocialTasks}
+          />
+          <Label htmlFor="enable-social-tasks" className="text-base font-medium">
+            Enable social media tasks for this raffle
+          </Label>
+        </div>
+
+        {/* Social Media Tasks Section */}
+        {showSocialTasks && (
+          <div className="mt-8">
+            <SocialTaskCreator 
+              onTasksChange={handleSocialTasksChange}
+              initialTasks={socialTasks}
+              visible={showSocialTasks}
+              onSubmit={(tasks) => {
+                // Placeholder: show tasks in alert for now
+                alert('Tasks to save: ' + JSON.stringify(tasks, null, 2));
+                // In production, you would call SocialTaskService.createRaffleTasks(raffleAddress, tasks)
+              }}
+            />
+          </div>
+        )}
+
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -1450,7 +1737,7 @@ const CreateRafflePage = () => {
       <div className="flex flex-col gap-2">
         <label className="font-semibold text-sm whitespace-nowrap">Raffle Type</label>
         <select
-          className="px-2 py-1 rounded border bg-background text-foreground text-sm"
+          className="px-2 py-1 rounded border bg-white text-black dark:bg-gray-900 dark:text-white text-sm"
           value={raffleType}
           onChange={e => setRaffleType(e.target.value)}
         >
@@ -1465,7 +1752,7 @@ const CreateRafflePage = () => {
           <div className="flex flex-col gap-2">
             <label className="font-semibold text-sm whitespace-nowrap">NFT Standard</label>
             <select
-              className="px-2 py-1 rounded border bg-background text-foreground text-sm"
+              className="px-2 py-1 rounded border bg-white text-black dark:bg-gray-900 dark:text-white text-sm"
               value={nftStandard}
               onChange={e => setNftStandard(e.target.value)}
             >
@@ -1478,7 +1765,7 @@ const CreateRafflePage = () => {
             <div className="flex flex-col gap-2">
               <label className="font-semibold text-sm whitespace-nowrap">ERC721 Source</label>
               <select
-                className="px-2 py-1 rounded border bg-background text-foreground text-sm"
+                className="px-2 py-1 rounded border bg-white text-black dark:bg-gray-900 dark:text-white text-sm"
                 value={erc721Source}
                 onChange={e => setErc721Source(e.target.value)}
               >
@@ -1495,7 +1782,7 @@ const CreateRafflePage = () => {
         <div className="flex flex-col gap-2">
           <label className="font-semibold text-sm whitespace-nowrap">NFT Standard</label>
           <select
-            className="px-2 py-1 rounded border bg-background text-foreground text-sm"
+            className="px-2 py-1 rounded border bg-white text-black dark:bg-gray-900 dark:text-white text-sm"
             value={nftStandard}
             onChange={e => setNftStandard(e.target.value)}
           >
@@ -1575,6 +1862,8 @@ function LuckySaleERC721Form() {
   const { connected, address } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
+  const [socialTasks, setSocialTasks] = useState([]);
+  const [showSocialTasks, setShowSocialTasks] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     collectionAddress: '',
@@ -1591,6 +1880,10 @@ function LuckySaleERC721Form() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleSocialTasksChange = (tasks) => {
+    setSocialTasks(tasks);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!connected || !contracts.raffleDeployer) {
@@ -1602,30 +1895,39 @@ function LuckySaleERC721Form() {
       const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
       const duration = parseInt(formData.duration) * 60;
       const ticketPrice = formData.ticketPrice ? ethers.utils.parseEther(formData.ticketPrice) : 0;
-      const result = await executeTransaction(
-        contracts.raffleDeployer.createRaffle,
-        formData.name,
+      const params = {
+        name: formData.name,
         startTime,
         duration,
-        parseInt(formData.ticketLimit),
-        parseInt(formData.winnersCount),
-        parseInt(formData.maxTicketsPerParticipant),
-        true, // isPrized (lucky sale is prized)
-        ticketPrice,
-        false, // erc721Drop (false for escrowed workflow)
-        formData.collectionAddress,
-        1, // standard (ERC1155)
-        parseInt(formData.tokenId),
-        unitsPerWinner,
-        '', '', '',
-        address,
-        0,
-        ethers.constants.AddressZero,
-        0,
-        ethers.constants.AddressZero,
-        0,
-        0
-      );
+        ticketLimit: parseInt(formData.ticketLimit),
+        winnersCount: parseInt(formData.winnersCount),
+        maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+        isPrized: true,
+        customTicketPrice: ticketPrice,
+        erc721Drop: false,
+        prizeCollection: formData.collectionAddress,
+        standard: 0, // ERC721
+        prizeTokenId: parseInt(formData.tokenId),
+        amountPerWinner: 1,
+        collectionName: '',
+        collectionSymbol: '',
+        collectionBaseURI: '',
+        creator: address,
+        royaltyPercentage: 0,
+        royaltyRecipient: ethers.constants.AddressZero,
+        maxSupply: 0,
+        erc20PrizeToken: ethers.constants.AddressZero,
+        erc20PrizeAmount: 0,
+        ethPrizeAmount: 0
+      };
+      let result = { success: false };
+      try {
+        const tx = await contracts.raffleDeployer.createRaffle(params);
+        const receipt = await tx.wait();
+        result = { success: true, receipt, hash: tx.hash };
+      } catch (error) {
+        result = { success: false, error: error.message };
+      }
       if (result.success) {
         alert('Lucky Sale ERC721 raffle created successfully!');
         setFormData({
@@ -1753,6 +2055,35 @@ function LuckySaleERC721Form() {
             required
           />
         </div>
+
+        {/* Social Media Tasks Toggle */}
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="enable-social-tasks"
+            checked={showSocialTasks}
+            onCheckedChange={setShowSocialTasks}
+          />
+          <Label htmlFor="enable-social-tasks" className="text-base font-medium">
+            Enable social media tasks for this raffle
+          </Label>
+        </div>
+
+        {/* Social Media Tasks Section */}
+        {showSocialTasks && (
+          <div className="mt-8">
+            <SocialTaskCreator 
+              onTasksChange={handleSocialTasksChange}
+              initialTasks={socialTasks}
+              visible={showSocialTasks}
+              onSubmit={(tasks) => {
+                // Placeholder: show tasks in alert for now
+                alert('Tasks to save: ' + JSON.stringify(tasks, null, 2));
+                // In production, you would call SocialTaskService.createRaffleTasks(raffleAddress, tasks)
+              }}
+            />
+          </div>
+        )}
+
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -1772,6 +2103,8 @@ function LuckySaleERC1155Form() {
   const { connected, address } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
+  const [socialTasks, setSocialTasks] = useState([]);
+  const [showSocialTasks, setShowSocialTasks] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     collectionAddress: '',
@@ -1789,6 +2122,10 @@ function LuckySaleERC1155Form() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleSocialTasksChange = (tasks) => {
+    setSocialTasks(tasks);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!connected || !contracts.raffleDeployer) {
@@ -1801,30 +2138,39 @@ function LuckySaleERC1155Form() {
       const duration = parseInt(formData.duration) * 60;
       const ticketPrice = formData.ticketPrice ? ethers.utils.parseEther(formData.ticketPrice) : 0;
       const unitsPerWinner = formData.unitsPerWinner ? parseInt(formData.unitsPerWinner) : 1;
-      const result = await executeTransaction(
-        contracts.raffleDeployer.createRaffle,
-        formData.name,
+      const params = {
+        name: formData.name,
         startTime,
         duration,
-        parseInt(formData.ticketLimit),
-        parseInt(formData.winnersCount),
-        parseInt(formData.maxTicketsPerParticipant),
-        false, // whitelist
-        ticketPrice,
-        false, // erc1155Drop (always false for existing collections)
-        formData.collectionAddress,
-        1, // standard (ERC1155)
-        parseInt(formData.tokenId),
-        unitsPerWinner,
-        '', '', '',
-        address,
-        0,
-        ethers.constants.AddressZero,
-        0,
-        ethers.constants.AddressZero,
-        0,
-        0
-      );
+        ticketLimit: parseInt(formData.ticketLimit),
+        winnersCount: parseInt(formData.winnersCount),
+        maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+        isPrized: true,
+        customTicketPrice: ticketPrice,
+        erc721Drop: false,
+        prizeCollection: formData.collectionAddress,
+        standard: 1, // ERC1155
+        prizeTokenId: parseInt(formData.tokenId),
+        amountPerWinner: unitsPerWinner,
+        collectionName: '',
+        collectionSymbol: '',
+        collectionBaseURI: '',
+        creator: address,
+        royaltyPercentage: 0,
+        royaltyRecipient: ethers.constants.AddressZero,
+        maxSupply: 0,
+        erc20PrizeToken: ethers.constants.AddressZero,
+        erc20PrizeAmount: 0,
+        ethPrizeAmount: 0
+      };
+      let result = { success: false };
+      try {
+        const tx = await contracts.raffleDeployer.createRaffle(params);
+        const receipt = await tx.wait();
+        result = { success: true, receipt, hash: tx.hash };
+      } catch (error) {
+        result = { success: false, error: error.message };
+      }
       if (result.success) {
         alert('Lucky Sale ERC1155 raffle created successfully!');
         setFormData({
@@ -1964,6 +2310,47 @@ function LuckySaleERC1155Form() {
             required
           />
         </div>
+        {/* Social Media Tasks Section */}
+        <div className="mt-8">
+          <SocialTaskCreator 
+            onTasksChange={handleSocialTasksChange}
+            initialTasks={socialTasks}
+            visible={showSocialTasks}
+            onSubmit={(tasks) => {
+              // Placeholder: show tasks in alert for now
+              alert('Tasks to save: ' + JSON.stringify(tasks, null, 2));
+              // In production, you would call SocialTaskService.createRaffleTasks(raffleAddress, tasks)
+            }}
+          />
+        </div>
+
+        {/* Social Media Tasks Toggle */}
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="enable-social-tasks"
+            checked={showSocialTasks}
+            onCheckedChange={setShowSocialTasks}
+          />
+          <Label htmlFor="enable-social-tasks" className="text-base font-medium">
+            Enable social media tasks for this raffle
+          </Label>
+        </div>
+
+        {showSocialTasks && (
+          <div className="mt-8">
+            <SocialTaskCreator 
+              onTasksChange={handleSocialTasksChange}
+              initialTasks={socialTasks}
+              visible={showSocialTasks}
+              onSubmit={(tasks) => {
+                // Placeholder: show tasks in alert for now
+                alert('Tasks to save: ' + JSON.stringify(tasks, null, 2));
+                // In production, you would call SocialTaskService.createRaffleTasks(raffleAddress, tasks)
+              }}
+            />
+          </div>
+        )}
+
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -1983,6 +2370,8 @@ function ETHGiveawayForm() {
   const { connected, address } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
+  const [socialTasks, setSocialTasks] = useState([]);
+  const [showSocialTasks, setShowSocialTasks] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     ethAmount: '',
@@ -1997,6 +2386,10 @@ function ETHGiveawayForm() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleSocialTasksChange = (tasks) => {
+    setSocialTasks(tasks);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!connected || !contracts.raffleDeployer) {
@@ -2008,30 +2401,39 @@ function ETHGiveawayForm() {
       const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
       const duration = parseInt(formData.duration) * 60;
       const ethAmount = formData.ethAmount ? ethers.utils.parseEther(formData.ethAmount) : 0;
-      const result = await executeTransaction(
-        contracts.raffleDeployer.createRaffle,
-        formData.name,
+      const params = {
+        name: formData.name,
         startTime,
         duration,
-        parseInt(formData.ticketLimit),
-        parseInt(formData.winnersCount),
-        parseInt(formData.maxTicketsPerParticipant),
-        true, // isPrized (ETH giveaway is prized)
-        0, // customTicketPrice (use global ticket price)
-        false, // erc721Drop (false for ETH prizes)
-        ethers.constants.AddressZero, // prizeCollection
-        2, // standard: 2 for ETH
-        0, // prizeTokenId
-        0, // amountPerWinner
-        '', '', '',
-        address,
-        0,
-        ethers.constants.AddressZero,
-        0,
-        ethers.constants.AddressZero,
-        0,
-        ethAmount // ETH prize amount
-      );
+        ticketLimit: parseInt(formData.ticketLimit),
+        winnersCount: parseInt(formData.winnersCount),
+        maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+        isPrized: true,
+        customTicketPrice: 0,
+        erc721Drop: false,
+        prizeCollection: ethers.constants.AddressZero, // Use zero address for ETH
+        standard: 3, // Use 3 for ETH
+        prizeTokenId: 0,
+        amountPerWinner: 0,
+        collectionName: '',
+        collectionSymbol: '',
+        collectionBaseURI: '',
+        creator: address,
+        royaltyPercentage: 0,
+        royaltyRecipient: ethers.constants.AddressZero,
+        maxSupply: 0,
+        erc20PrizeToken: ethers.constants.AddressZero,
+        erc20PrizeAmount: ethers.BigNumber.from(0),
+        ethPrizeAmount: ethAmount
+      };
+      let result = { success: false };
+      try {
+        const tx = await contracts.raffleDeployer.createRaffle(params);
+        const receipt = await tx.wait();
+        result = { success: true, receipt, hash: tx.hash };
+      } catch (error) {
+        result = { success: false, error: error.message };
+      }
       if (result.success) {
         alert('ETH Giveaway raffle created successfully!');
         setFormData({
@@ -2043,6 +2445,7 @@ function ETHGiveawayForm() {
           winnersCount: '',
           maxTicketsPerParticipant: ''
         });
+        setSocialTasks([]);
       } else {
         throw new Error(result.error);
       }
@@ -2135,6 +2538,35 @@ function ETHGiveawayForm() {
             />
           </div>
         </div>
+
+        {/* Social Media Tasks Toggle */}
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="enable-social-tasks"
+            checked={showSocialTasks}
+            onCheckedChange={setShowSocialTasks}
+          />
+          <Label htmlFor="enable-social-tasks" className="text-base font-medium">
+            Enable social media tasks for this raffle
+          </Label>
+        </div>
+
+        {/* Social Media Tasks Section */}
+        {showSocialTasks && (
+          <div className="mt-8">
+            <SocialTaskCreator 
+              onTasksChange={handleSocialTasksChange}
+              initialTasks={socialTasks}
+              visible={showSocialTasks}
+              onSubmit={(tasks) => {
+                // Placeholder: show tasks in alert for now
+                alert('Tasks to save: ' + JSON.stringify(tasks, null, 2));
+                // In production, you would call SocialTaskService.createRaffleTasks(raffleAddress, tasks)
+              }}
+            />
+          </div>
+        )}
+
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -2154,6 +2586,8 @@ function ERC20GiveawayForm() {
   const { connected, address } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
+  const [socialTasks, setSocialTasks] = useState([]);
+  const [showSocialTasks, setShowSocialTasks] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     tokenAddress: '',
@@ -2169,6 +2603,10 @@ function ERC20GiveawayForm() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleSocialTasksChange = (tasks) => {
+    setSocialTasks(tasks);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!connected || !contracts.raffleDeployer) {
@@ -2179,31 +2617,40 @@ function ERC20GiveawayForm() {
     try {
       const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
       const duration = parseInt(formData.duration) * 60;
-      const tokenAmount = formData.tokenAmount ? ethers.utils.parseUnits(formData.tokenAmount, 18) : 0; // default 18 decimals
-      const result = await executeTransaction(
-        contracts.raffleDeployer.createRaffle,
-        formData.name,
+      const tokenAmount = formData.tokenAmount ? ethers.utils.parseUnits(formData.tokenAmount, 18) : ethers.BigNumber.from(0); // default 18 decimals
+      const params = {
+        name: formData.name,
         startTime,
         duration,
-        parseInt(formData.ticketLimit),
-        parseInt(formData.winnersCount),
-        parseInt(formData.maxTicketsPerParticipant),
-        true, // isPrized (ERC20 giveaway is prized)
-        0, // customTicketPrice (use global ticket price)
-        false, // erc721Drop (false for ERC20 prizes)
-        formData.tokenAddress, // prizeCollection = ERC20 token address
-        3, // standard: 3 for ERC20
-        0, // prizeTokenId
-        0, // amountPerWinner
-        '', '', '',
-        address,
-        0,
-        formData.tokenAddress, // ERC20 token address again for clarity
-        tokenAmount, // ERC20 token amount
-        ethers.constants.AddressZero,
-        0,
-        0
-      );
+        ticketLimit: parseInt(formData.ticketLimit),
+        winnersCount: parseInt(formData.winnersCount),
+        maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+        isPrized: true,
+        customTicketPrice: ethers.BigNumber.from(0),
+        erc721Drop: false,
+        prizeCollection: ethers.constants.AddressZero, // Use zero address for ERC20
+        standard: 2, // Use 2 for ERC20
+        prizeTokenId: 0,
+        amountPerWinner: 0,
+        collectionName: '',
+        collectionSymbol: '',
+        collectionBaseURI: '',
+        creator: address,
+        royaltyPercentage: 0,
+        royaltyRecipient: ethers.constants.AddressZero,
+        maxSupply: 0,
+        erc20PrizeToken: formData.tokenAddress,
+        erc20PrizeAmount: tokenAmount,
+        ethPrizeAmount: ethers.BigNumber.from(0)
+      };
+      let result = { success: false };
+      try {
+        const tx = await contracts.raffleDeployer.createRaffle(params);
+        const receipt = await tx.wait();
+        result = { success: true, receipt, hash: tx.hash };
+      } catch (error) {
+        result = { success: false, error: error.message };
+      }
       if (result.success) {
         alert('ERC20 Giveaway raffle created successfully!');
         setFormData({
@@ -2216,6 +2663,7 @@ function ERC20GiveawayForm() {
           winnersCount: '',
           maxTicketsPerParticipant: ''
         });
+        setSocialTasks([]);
       } else {
         throw new Error(result.error);
       }
@@ -2319,6 +2767,35 @@ function ERC20GiveawayForm() {
             />
           </div>
         </div>
+
+        {/* Social Media Tasks Toggle */}
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="enable-social-tasks"
+            checked={showSocialTasks}
+            onCheckedChange={setShowSocialTasks}
+          />
+          <Label htmlFor="enable-social-tasks" className="text-base font-medium">
+            Enable social media tasks for this raffle
+          </Label>
+        </div>
+
+        {/* Social Media Tasks Section */}
+        {showSocialTasks && (
+          <div className="mt-8">
+            <SocialTaskCreator 
+              onTasksChange={handleSocialTasksChange}
+              initialTasks={socialTasks}
+              visible={showSocialTasks}
+              onSubmit={(tasks) => {
+                // Placeholder: show tasks in alert for now
+                alert('Tasks to save: ' + JSON.stringify(tasks, null, 2));
+                // In production, you would call SocialTaskService.createRaffleTasks(raffleAddress, tasks)
+              }}
+            />
+          </div>
+        )}
+
         <div className="flex gap-4">
           <Button
             type="submit"

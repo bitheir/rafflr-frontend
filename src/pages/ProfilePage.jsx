@@ -10,6 +10,7 @@ import MinterApprovalComponent from '../components/MinterApprovalComponent';
 import { CONTRACT_ADDRESSES } from '../constants';
 import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
+import ProfileTabs from '../components/ProfileTabs';
 
 function mapRaffleState(stateNum) {
   switch (stateNum) {
@@ -81,18 +82,18 @@ const ActivityCard = ({ activity }) => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start gap-3">
         <div className="mt-1">
           {getActivityIcon()}
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium">{getActivityDescription()}</p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {new Date(activity.timestamp * 1000).toLocaleDateString()}
           </p>
           {activity.txHash && (
-            <p className="text-xs text-muted-foreground font-mono mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">
               Tx: {activity.txHash.slice(0, 10)}...
             </p>
           )}
@@ -189,7 +190,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4">
+    <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold truncate">{raffle.name}</h3>
         {getStatusBadge()}
@@ -197,15 +198,15 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
       
       <div className="space-y-2 text-sm mb-4">
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Tickets Sold:</span>
+          <span className="text-gray-500 dark:text-gray-400">Tickets Sold:</span>
           <span>{raffle.ticketsSold} / {raffle.ticketLimit}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Revenue:</span>
+          <span className="text-gray-500 dark:text-gray-400">Revenue:</span>
           <span>{ethers.utils.formatEther(raffle.totalRevenue || '0')} ETH</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Time:</span>
+          <span className="text-gray-500 dark:text-gray-400">Time:</span>
           <span>{timeRemaining}</span>
         </div>
       </div>
@@ -288,23 +289,23 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
   };
   
   return (
-    <div className="bg-card border border-border rounded-lg p-4">
+    <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="font-semibold truncate">{ticket.raffleName}</h3>
-        <span className="text-sm text-muted-foreground">{ticket.quantity} tickets</span>
+        <span className="text-sm text-gray-500 dark:text-gray-400">{ticket.quantity} tickets</span>
       </div>
       
       <div className="space-y-1 text-sm mb-3">
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Total Cost:</span>
+          <span className="text-gray-500 dark:text-gray-400">Total Cost:</span>
           <span>{ethers.utils.formatEther(ticket.totalCost)} ETH</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Purchase Date:</span>
+          <span className="text-gray-500 dark:text-gray-400">Purchase Date:</span>
           <span>{new Date(ticket.purchaseDate * 1000).toLocaleDateString()}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">State:</span>
+          <span className="text-gray-500 dark:text-gray-400">State:</span>
           <span className={`text-xs px-2 py-1 rounded-full ${
             ticket.raffleState === 'pending' ? 'bg-yellow-100 text-yellow-800' :
             ticket.raffleState === 'active' ? 'bg-green-100 text-green-800' :
@@ -575,16 +576,15 @@ const ProfilePage = () => {
                   }
                 }
 
-                // Fetch deletion refunds
+                // Fetch deletion refunds for this raffle
                 const deletionRefundFilter = raffleContract.filters.DeletionRefund(address);
                 const deletionRefundEvents = await raffleContract.queryFilter(deletionRefundFilter, fromBlock);
-                
                 for (const refundEvent of deletionRefundEvents) {
                   const block = await provider.getBlock(refundEvent.blockNumber);
                   try {
                     const raffleInfo = await executeCall(raffleContract.name);
                     activities.push({
-                      type: 'deletion_refund',
+                      type: 'refund_claimed',
                       raffleAddress: raffleAddress,
                       raffleName: raffleInfo.success ? raffleInfo.result : `Raffle ${raffleAddress.slice(0, 8)}...`,
                       amount: refundEvent.args.amount,
@@ -593,20 +593,28 @@ const ProfilePage = () => {
                       blockNumber: refundEvent.blockNumber
                     });
                   } catch (error) {
-                    console.error('Error fetching raffle name for deletion refund:', error);
+                    // fallback
+                    activities.push({
+                      type: 'refund_claimed',
+                      raffleAddress: raffleAddress,
+                      raffleName: `Raffle ${raffleAddress.slice(0, 8)}...`,
+                      amount: refundEvent.args.amount,
+                      timestamp: block.timestamp,
+                      txHash: refundEvent.transactionHash,
+                      blockNumber: refundEvent.blockNumber
+                    });
                   }
                 }
 
-                // Fetch full refunds for deletion
+                // Fetch full refunds for deletion for this raffle
                 const fullRefundForDeletionFilter = raffleContract.filters.FullRefundForDeletion(address);
                 const fullRefundEvents = await raffleContract.queryFilter(fullRefundForDeletionFilter, fromBlock);
-                
                 for (const refundEvent of fullRefundEvents) {
                   const block = await provider.getBlock(refundEvent.blockNumber);
                   try {
                     const raffleInfo = await executeCall(raffleContract.name);
                     activities.push({
-                      type: 'full_refund_for_deletion',
+                      type: 'refund_claimed',
                       raffleAddress: raffleAddress,
                       raffleName: raffleInfo.success ? raffleInfo.result : `Raffle ${raffleAddress.slice(0, 8)}...`,
                       amount: refundEvent.args.amount,
@@ -615,7 +623,15 @@ const ProfilePage = () => {
                       blockNumber: refundEvent.blockNumber
                     });
                   } catch (error) {
-                    console.error('Error fetching raffle name for full refund:', error);
+                    activities.push({
+                      type: 'refund_claimed',
+                      raffleAddress: raffleAddress,
+                      raffleName: `Raffle ${raffleAddress.slice(0, 8)}...`,
+                      amount: refundEvent.args.amount,
+                      timestamp: block.timestamp,
+                      txHash: refundEvent.transactionHash,
+                      blockNumber: refundEvent.blockNumber
+                    });
                   }
                 }
               } catch (error) {
@@ -661,8 +677,8 @@ const ProfilePage = () => {
         revenue_withdrawn: activities.filter(a => a.type === 'revenue_withdrawn').length,
         raffle_deleted: activities.filter(a => a.type === 'raffle_deleted').length,
         admin_withdrawn: activities.filter(a => a.type === 'admin_withdrawn').length,
-        deletion_refund: activities.filter(a => a.type === 'deletion_refund').length,
-        full_refund_for_deletion: activities.filter(a => a.type === 'full_refund_for_deletion').length
+        deletion_refund: activities.filter(a => a.type === 'refund_claimed').length,
+        full_refund_for_deletion: activities.filter(a => a.type === 'refund_claimed').length
       });
 
       // Calculate activity stats
@@ -674,7 +690,7 @@ const ProfilePage = () => {
           .filter(a => a.type === 'revenue_withdrawn' || a.type === 'admin_withdrawn')
           .reduce((sum, a) => sum.add(a.amount), ethers.BigNumber.from(0))
           .toString(),
-        totalRefundsClaimed: 0 // No refund events in contract, will be tracked via UI state
+        totalRefundsClaimed: activities.filter(a => a.type === 'refund_claimed').length
       };
       setActivityStats(stats);
 
@@ -996,7 +1012,7 @@ const ProfilePage = () => {
               </p>
             </div>
           </div>
-          <div className="mt-4 p-3 bg-muted rounded-lg">
+          <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
             <p className="text-sm font-medium">Connected Account:</p>
             <p className="font-mono text-sm">{address}</p>
           </div>
@@ -1006,195 +1022,98 @@ const ProfilePage = () => {
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Activity Overview</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="bg-card border border-border rounded-lg p-4">
+            <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4">
               <div className="flex items-center gap-3">
                 <Ticket className="h-8 w-8 text-blue-500" />
                 <div>
                   <p className="text-2xl font-bold">{activityStats.totalTicketsPurchased}</p>
-                  <p className="text-sm text-muted-foreground">Tickets Purchased</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Tickets Purchased</p>
                 </div>
               </div>
             </div>
-            <div className="bg-card border border-border rounded-lg p-4">
+            <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4">
               <div className="flex items-center gap-3">
                 <Plus className="h-8 w-8 text-green-500" />
                 <div>
                   <p className="text-2xl font-bold">{activityStats.totalRafflesCreated}</p>
-                  <p className="text-sm text-muted-foreground">Raffles Created</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Raffles Created</p>
                 </div>
               </div>
             </div>
-            <div className="bg-card border border-border rounded-lg p-4">
+            <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4">
               <div className="flex items-center gap-3">
                 <Trophy className="h-8 w-8 text-yellow-500" />
                 <div>
                   <p className="text-2xl font-bold">{activityStats.totalPrizesWon}</p>
-                  <p className="text-sm text-muted-foreground">Prizes Won</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Prizes Won</p>
                 </div>
               </div>
             </div>
-            <div className="bg-card border border-border rounded-lg p-4">
+            <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4">
               <div className="flex items-center gap-3">
                 <DollarSign className="h-8 w-8 text-emerald-500" />
                 <div>
                   <p className="text-2xl font-bold">{parseFloat(ethers.utils.formatEther(activityStats.totalRevenueWithdrawn)).toFixed(4)}</p>
-                  <p className="text-sm text-muted-foreground">ETH Withdrawn</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">ETH Withdrawn</p>
                 </div>
               </div>
             </div>
-            <div className="bg-card border border-border rounded-lg p-4">
+            <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-4">
               <div className="flex items-center gap-3">
                 <Minus className="h-8 w-8 text-orange-500" />
                 <div>
                   <p className="text-2xl font-bold">{activityStats.totalRefundsClaimed}</p>
-                  <p className="text-sm text-muted-foreground">Refunds Claimed</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Refunds Claimed</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="mb-8">
-          <div className="flex border-b border-border overflow-x-auto">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-3 whitespace-nowrap border-b-2 transition-colors ${
-                    activeTab === tab.id
-                      ? 'border-primary text-primary'
-                      : 'border-transparent hover:text-foreground'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span className="font-medium">{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Tab Content */}
+        {/* Profile Tabs */}
         {loading ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading...</p>
+            <p className="text-gray-500 dark:text-gray-400">Loading...</p>
           </div>
         ) : (
-          <div>
-            {activeTab === 'activity' && (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold">Recent Activity</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Showing last 50,000 blocks of activity
-                  </p>
-                </div>
-                {userActivity.length > 0 ? (
-                  <div className="space-y-4">
-                    {userActivity.map((activity, index) => (
-                      <ActivityCard key={`${activity.txHash}-${activity.blockNumber}-${index}`} activity={activity} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No activity found in the last 50,000 blocks</p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Try participating in raffles or creating your own to see activity here
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'created' && (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold">Created Raffles</h2>
-                </div>
-                {createdRaffles.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {createdRaffles.map((raffle) => (
-                      <CreatedRaffleCard
-                        key={raffle.id}
-                        raffle={raffle}
-                        onDelete={handleDeleteRaffle}
+          <ProfileTabs
+            activities={userActivity}
+            createdRaffles={createdRaffles}
+            purchasedTickets={purchasedTickets}
+            creatorStats={{
+              totalRaffles: createdRaffles.length,
+              activeRaffles: createdRaffles.filter(r => r.state === 'active').length,
+              totalRevenue: createdRaffles.reduce((sum, r) => sum + (r.ticketsSold * parseFloat(r.ticketPrice) / 1e18), 0).toFixed(4),
+              monthlyRevenue: '0.0000', // TODO: Calculate monthly revenue
+              totalParticipants: createdRaffles.reduce((sum, r) => sum + r.ticketsSold, 0),
+              uniqueParticipants: createdRaffles.reduce((sum, r) => sum + r.ticketsSold, 0), // TODO: Calculate unique participants
+              successRate: createdRaffles.length > 0 ? 
+                Math.round((createdRaffles.filter(r => r.state === 'completed').length / createdRaffles.length) * 100) : 0
+            }}
+            onDeleteRaffle={handleDeleteRaffle}
                         onViewRevenue={handleViewRevenue}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground mb-4">You haven't created any raffles yet</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'tickets' && (
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Purchased Tickets</h2>
-                {purchasedTickets.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {purchasedTickets.map((ticket) => (
-                      <PurchasedTicketsCard
-                        key={ticket.id}
-                        ticket={ticket}
                         onClaimPrize={handleClaimPrize}
                         onClaimRefund={handleClaimRefund}
                       />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Ticket className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">You haven't purchased any tickets yet</p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Visit the landing page to participate in active raffles
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'collections' && (
-              <div className="space-y-8">
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Creator Dashboard</h2>
-                  <p className="text-muted-foreground mb-6">
-                    Manage your NFT collections, adjust royalties, withdraw revenue, and control minter approvals.
-                  </p>
-                </div>
-                
-                <RoyaltyAdjustmentComponent />
-                <CreatorRevenueWithdrawalComponent />
-                <MinterApprovalComponent />
-              </div>
-            )}
-          </div>
         )}
 
         {/* Revenue Modal */}
         {showRevenueModal && selectedRaffle && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="bg-white dark:bg-gray-900 border border-border rounded-lg p-6 max-w-md w-full mx-4">
               <h3 className="text-lg font-semibold mb-4">Revenue Details</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Raffle:</span>
+                  <span className="text-gray-500 dark:text-gray-400">Raffle:</span>
                   <span className="font-medium">{selectedRaffle.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Revenue:</span>
+                  <span className="text-gray-500 dark:text-gray-400">Total Revenue:</span>
                   <span className="font-medium">{ethers.utils.formatEther(selectedRaffle.totalRevenue)} ETH</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tickets Sold:</span>
+                  <span className="text-gray-500 dark:text-gray-400">Tickets Sold:</span>
                   <span className="font-medium">{selectedRaffle.ticketsSold}</span>
                 </div>
               </div>

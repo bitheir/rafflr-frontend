@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
@@ -17,88 +17,88 @@ import {
   UserPlus, 
   UserMinus,
   Loader2,
-  Info
+  Info,
+  Search
 } from 'lucide-react';
 
 const MinterApprovalComponent = () => {
-  const { address, connected } = useWallet();
-  const { provider } = useContract();
+  const { address, connected, provider } = useWallet();
+  const { getContractInstance } = useContract();
   const [loading, setLoading] = useState(false);
-  const [collections, setCollections] = useState([]);
-  const [selectedCollection, setSelectedCollection] = useState('');
+  const [collectionAddress, setCollectionAddress] = useState('');
+  const [fetchedCollection, setFetchedCollection] = useState('');
   const [minterAddress, setMinterAddress] = useState('');
   const [isApproved, setIsApproved] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [currentMinter, setCurrentMinter] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [collectionName, setCollectionName] = useState('');
+  const [collectionSymbol, setCollectionSymbol] = useState('');
 
-  // Load user's collections
-  useEffect(() => {
-    if (connected && address) {
-      loadUserCollections();
+  // Fetch collection details by address
+  const fetchCollection = async () => {
+    setError('');
+    setSuccess('');
+    setFetchedCollection('');
+    setIsLocked(false);
+    setCurrentMinter('');
+    setIsApproved(false);
+    setCollectionName('');
+    setCollectionSymbol('');
+    if (!ethers.utils.isAddress(collectionAddress)) {
+      setError('Please enter a valid Ethereum contract address.');
+      return;
     }
-  }, [connected, address]);
-
-  // Load collection details when selected
-  useEffect(() => {
-    if (selectedCollection) {
-      loadCollectionDetails();
+    if (!provider) {
+      setError('Provider not available.');
+      return;
     }
-  }, [selectedCollection]);
-
-  const loadUserCollections = async () => {
     try {
       setLoading(true);
-      setError('');
-      
-      // This would typically come from your backend or contract events
-      // For now, we'll use a placeholder - in a real implementation,
-      // you'd query the NFTFactory or other contracts to get user's collections
-      const mockCollections = [
-        {
-          address: '0x1234567890123456789012345678901234567890',
-          name: 'My NFT Collection 1',
-          symbol: 'MNFT1'
-        },
-        {
-          address: '0x0987654321098765432109876543210987654321',
-          name: 'My NFT Collection 2',
-          symbol: 'MNFT2'
-        }
-      ];
-      
-      setCollections(mockCollections);
+      const contract = new ethers.Contract(
+        collectionAddress,
+        contractABIs.erc721Prize,
+        provider
+      );
+      // Try to fetch minterLocked and minter to validate contract
+      const locked = await contract.minterLocked();
+      setIsLocked(locked);
+      const currentMinter = await contract.minter();
+      setCurrentMinter(currentMinter);
+      // Fetch name and symbol
+      const name = await contract.name();
+      const symbol = await contract.symbol();
+      setCollectionName(name);
+      setCollectionSymbol(symbol);
+      setFetchedCollection(collectionAddress);
     } catch (err) {
-      setError('Failed to load collections: ' + err.message);
+      setError('Failed to fetch collection: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const loadCollectionDetails = async () => {
-    if (!selectedCollection || !provider) return;
+  // Load collection details when minter address changes
+  React.useEffect(() => {
+    if (fetchedCollection && minterAddress && ethers.utils.isAddress(minterAddress) && provider) {
+      loadCollectionDetails();
+    }
+    // eslint-disable-next-line
+  }, [minterAddress, fetchedCollection]);
 
+  const loadCollectionDetails = async () => {
     try {
       setLoading(true);
       setError('');
-
       const contract = new ethers.Contract(
-        selectedCollection,
+        fetchedCollection,
         contractABIs.erc721Prize,
         provider
       );
-
-      // Check if minter approval is locked
-      const locked = await contract.minterLocked();
-      setIsLocked(locked);
-
-      // If a minter address is provided, check if they are the current minter
-      if (minterAddress && ethers.isAddress(minterAddress)) {
         const currentMinter = await contract.minter();
         setIsApproved(currentMinter.toLowerCase() === minterAddress.toLowerCase());
         setCurrentMinter(currentMinter);
-      }
     } catch (err) {
       setError('Failed to load collection details: ' + err.message);
     } finally {
@@ -107,35 +107,28 @@ const MinterApprovalComponent = () => {
   };
 
   const setMinterApproval = async (approved) => {
-    if (!selectedCollection || !minterAddress || !provider) {
-      setError('Please select a collection and enter a valid minter address');
+    if (!fetchedCollection || !minterAddress || !provider) {
+      setError('Please fetch a collection and enter a valid minter address');
       return;
     }
-
-    if (!ethers.isAddress(minterAddress)) {
+    if (!ethers.utils.isAddress(minterAddress)) {
       setError('Please enter a valid Ethereum address');
       return;
     }
-
     try {
       setLoading(true);
       setError('');
       setSuccess('');
-
       const signer = provider.getSigner();
       const contract = new ethers.Contract(
-        selectedCollection,
+        fetchedCollection,
         contractABIs.erc721Prize,
         signer
       );
-
       const tx = await contract.setMinterApproval(minterAddress, approved);
       await tx.wait();
-
       setSuccess(`Minter ${approved ? 'set' : 'removed'} successfully!`);
       setIsApproved(approved);
-      
-      // Clear the minter address after successful operation
       setMinterAddress('');
     } catch (err) {
       setError('Failed to set minter approval: ' + err.message);
@@ -145,43 +138,53 @@ const MinterApprovalComponent = () => {
   };
 
   const toggleMinterApprovalLock = async () => {
-    if (!selectedCollection || !provider) {
-      setError('Please select a collection first');
+    if (!fetchedCollection || !provider) {
+      setError('Please fetch a collection first');
       return;
     }
-
     try {
       setLoading(true);
       setError('');
       setSuccess('');
-
       const signer = provider.getSigner();
       const contract = new ethers.Contract(
-        selectedCollection,
+        fetchedCollection,
         contractABIs.erc721Prize,
         signer
       );
+      
+      // Check if the current user is the owner
+      const owner = await contract.owner();
+      const currentAddress = await signer.getAddress();
+      
+      if (owner.toLowerCase() !== currentAddress.toLowerCase()) {
+        setError('Only the contract owner can lock/unlock minter approval');
+        return;
+      }
 
       let tx;
       if (isLocked) {
+        console.log('Attempting to unlock minter approval...');
         tx = await contract.unlockMinterApproval();
       } else {
+        console.log('Attempting to lock minter approval...');
         tx = await contract.lockMinterApproval();
       }
       
+      console.log('Transaction sent:', tx.hash);
       await tx.wait();
-
       setSuccess(`Minter approval ${isLocked ? 'unlocked' : 'locked'} successfully!`);
       setIsLocked(!isLocked);
     } catch (err) {
-      setError(`Failed to ${isLocked ? 'unlock' : 'lock'} minter approval: ` + err.message);
+      console.error('Error in toggleMinterApprovalLock:', err);
+      setError(`Failed to ${isLocked ? 'unlock' : 'lock'} minter approval: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
   const validateAddress = (address) => {
-    return ethers.isAddress(address);
+    return ethers.utils.isAddress(address);
   };
 
   if (!connected) {
@@ -220,27 +223,51 @@ const MinterApprovalComponent = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Collection Selection */}
+        {/* Wallet not connected warning */}
+        {!connected && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Please connect your wallet to load collection info and manage minter approvals.
+            </AlertDescription>
+          </Alert>
+        )}
+        {/* Collection Address Input */}
         <div className="space-y-2">
-          <Label htmlFor="collection">Select Collection</Label>
-          <select
-            id="collection"
-            value={selectedCollection}
-            onChange={(e) => setSelectedCollection(e.target.value)}
-            className="w-full p-2 border border-border rounded-md bg-background"
-            disabled={loading}
-          >
-            <option value="">Choose a collection...</option>
-            {collections.map((collection) => (
-              <option key={collection.address} value={collection.address}>
-                {collection.name} ({collection.symbol})
-              </option>
-            ))}
-          </select>
+          <Label htmlFor="collection-address">Collection Contract Address</Label>
+          <div className="flex gap-2">
+            <Input
+              id="collection-address"
+              type="text"
+              placeholder="0x..."
+              value={collectionAddress}
+              onChange={(e) => setCollectionAddress(e.target.value)}
+              disabled={loading || !connected}
+            />
+            <Button
+              onClick={fetchCollection}
+              disabled={loading || !collectionAddress || !connected}
+              className="flex items-center gap-2"
+            >
+              <Search className="h-4 w-4" />
+              {loading ? 'Loading...' : 'Load Info'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Show minter approval management UI only if collection is fetched */}
+        {fetchedCollection && (
+          <>
+            {/* Collection Info */}
+            <div className="space-y-2">
+              <Label>Collection Info</Label>
+              <div className="flex items-center gap-4">
+                <span className="font-semibold">{collectionName}</span>
+                <span className="text-muted-foreground">({collectionSymbol})</span>
+              </div>
         </div>
 
         {/* Collection Status */}
-        {selectedCollection && (
           <div className="space-y-2">
             <Label>Collection Status</Label>
             <div className="flex items-center gap-2">
@@ -266,17 +293,9 @@ const MinterApprovalComponent = () => {
                 </p>
               </div>
             )}
-            <p className="text-sm text-muted-foreground">
-              {isLocked 
-                ? "Minter approvals are locked. No new approvals can be set until unlocked."
-                : "Minter approvals are unlocked. You can set new approvals."
-              }
-            </p>
           </div>
-        )}
 
         {/* Minter Approval Control */}
-        {selectedCollection && !isLocked && (
           <div className="space-y-4 p-4 border border-border rounded-lg bg-muted/50">
             <div className="space-y-2">
               <Label htmlFor="minter">Minter Address</Label>
@@ -319,10 +338,10 @@ const MinterApprovalComponent = () => {
               </div>
             )}
 
-            <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={() => setMinterApproval(true)}
-                disabled={loading || !minterAddress || !validateAddress(minterAddress) || isApproved}
+                  disabled={loading || !minterAddress || !validateAddress(minterAddress) || isApproved || isLocked}
                 className="flex-1"
               >
                 {loading ? (
@@ -330,11 +349,11 @@ const MinterApprovalComponent = () => {
                 ) : (
                   <UserPlus className="h-4 w-4 mr-2" />
                 )}
-                Set as Minter
+                  Set Minter
               </Button>
               <Button
                 onClick={() => setMinterApproval(false)}
-                disabled={loading || !minterAddress || !validateAddress(minterAddress) || !isApproved}
+                  disabled={loading || !minterAddress || !validateAddress(minterAddress) || !isApproved || isLocked}
                 variant="outline"
                 className="flex-1"
               >
@@ -343,21 +362,15 @@ const MinterApprovalComponent = () => {
                 ) : (
                   <UserMinus className="h-4 w-4 mr-2" />
                 )}
-                Remove as Minter
+                  Remove Minter
               </Button>
             </div>
-          </div>
-        )}
-
-        {/* Lock/Unlock Control */}
-        {selectedCollection && (
-          <div className="space-y-2">
-            <Label>Approval Lock Control</Label>
+              
             <Button
               onClick={toggleMinterApprovalLock}
               disabled={loading}
               variant={isLocked ? "default" : "outline"}
-              className="w-full"
+                className="w-full"
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -368,24 +381,9 @@ const MinterApprovalComponent = () => {
               )}
               {isLocked ? 'Unlock Minter Approval' : 'Lock Minter Approval'}
             </Button>
-            <p className="text-sm text-muted-foreground">
-              {isLocked 
-                ? "Unlocking will allow you to set new minter approvals."
-                : "Locking will prevent any new minter approvals from being set."
-              }
-            </p>
           </div>
+          </>
         )}
-
-        {/* Info Alert */}
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            <strong>How it works:</strong> The minter is the address that can mint tokens from your collection. 
-            When minter approval is locked, no new minters can be set, but the current minter can still mint. 
-            This provides security by preventing unauthorized minting after your collection is configured.
-          </AlertDescription>
-        </Alert>
 
         {/* Error Message */}
         {error && (

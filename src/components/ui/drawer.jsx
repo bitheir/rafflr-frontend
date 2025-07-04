@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
-import { cn } from "@/lib/utils"
+import { cn } from "../../lib/utils"
 
 function Drawer({
   ...props
@@ -100,7 +100,7 @@ function DrawerTitle({
   return (
     <DrawerPrimitive.Title
       data-slot="drawer-title"
-      className={cn("text-foreground font-semibold", className)}
+      className={cn("text-black dark:text-white font-semibold", className)}
       {...props} />
   );
 }
@@ -112,7 +112,7 @@ function DrawerDescription({
   return (
     <DrawerPrimitive.Description
       data-slot="drawer-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-gray-500 dark:text-gray-400 text-sm", className)}
       {...props} />
   );
 }

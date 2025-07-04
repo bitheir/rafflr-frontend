@@ -1,6 +1,3 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -76,7 +73,7 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-.dark {
+html.dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -110,214 +107,6 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  }
-  
-  html {
-    font-size: 16px; /* Base font size */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  }
-  
-  body {
-    @apply bg-background text-foreground;
-    font-size: 16px;
-    line-height: 1.6;
-    letter-spacing: 0.025em;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  }
-  
-  /* Increase font sizes for better legibility */
-  h1 {
-    font-size: 2.5rem; /* 40px */
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: 0.02em;
-  }
-  
-  h2 {
-    font-size: 2rem; /* 32px */
-    font-weight: 600;
-    line-height: 1.3;
-    letter-spacing: 0.02em;
-  }
-  
-  h3 {
-    font-size: 1.5rem; /* 24px */
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: 0.02em;
-  }
-  
-  h4 {
-    font-size: 1.25rem; /* 20px */
-    font-weight: 500;
-    line-height: 1.4;
-    letter-spacing: 0.02em;
-  }
-  
-  h5 {
-    font-size: 1.125rem; /* 18px */
-    font-weight: 500;
-    line-height: 1.4;
-    letter-spacing: 0.02em;
-  }
-  
-  h6 {
-    font-size: 1rem; /* 16px */
-    font-weight: 500;
-    line-height: 1.4;
-    letter-spacing: 0.02em;
-  }
-  
-  p {
-    font-size: 1.0625rem; /* 17px */
-    line-height: 1.6;
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase button text size */
-  button {
-    font-size: 1rem; /* 16px */
-    font-weight: 500;
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase input text size */
-  input, textarea, select {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  }
-  
-  /* Increase label text size */
-  label {
-    font-size: 1rem; /* 16px */
-    font-weight: 500;
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase badge text size */
-  .badge, [class*="badge"] {
-    font-size: 0.875rem; /* 14px */
-    font-weight: 500;
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase card title text size */
-  .card-title, [class*="card-title"] {
-    font-size: 1.25rem; /* 20px */
-    font-weight: 600;
-    letter-spacing: 0.02em;
-  }
-  
-  /* Increase card description text size */
-  .card-description, [class*="card-description"] {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase navigation text size */
-  nav a, .nav-link {
-    font-size: 1rem; /* 16px */
-    font-weight: 500;
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase table text size */
-  table {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
-  }
-  
-  th, td {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase alert text size */
-  .alert, [class*="alert"] {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase tooltip text size */
-  .tooltip, [class*="tooltip"] {
-    font-size: 0.875rem; /* 14px */
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase modal text size */
-  .modal, [class*="modal"] {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase sidebar text size */
-  .sidebar, [class*="sidebar"] {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase form text size */
-  .form-control, [class*="form-control"] {
-    font-size: 1rem; /* 16px */
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase status badge text size */
-  .status-badge {
-    font-size: 0.875rem; /* 14px */
-    font-weight: 500;
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase small text size */
-  small, .text-sm {
-    font-size: 0.875rem; /* 14px */
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase extra small text size */
-  .text-xs {
-    font-size: 0.8125rem; /* 13px */
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase large text size */
-  .text-lg {
-    font-size: 1.125rem; /* 18px */
-    letter-spacing: 0.025em;
-  }
-  
-  /* Increase extra large text size */
-  .text-xl {
-    font-size: 1.25rem; /* 20px */
-    letter-spacing: 0.02em;
-  }
-  
-  /* Increase 2xl text size */
-  .text-2xl {
-    font-size: 1.5rem; /* 24px */
-    letter-spacing: 0.02em;
-  }
-  
-  /* Increase 3xl text size */
-  .text-3xl {
-    font-size: 1.875rem; /* 30px */
-    letter-spacing: 0.02em;
-  }
-  
-  /* Increase 4xl text size */
-  .text-4xl {
-    font-size: 2.25rem; /* 36px */
-    letter-spacing: 0.02em;
-  }
-}
-
-/* Additional styles for raffle protocol */
 .animate-spin {
   animation: spin 1s linear infinite;
 }
@@ -331,51 +120,46 @@
   }
 }
 
-/* Enhance card hover effects */
 .card-hover {
   transition: all 0.3s ease;
 }
 
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
-/* Custom scrollbar for dark theme */
 ::-webkit-scrollbar {
   width: 8px;
-  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--muted);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: #888;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
+  background: #555;
 }
 
-/* Smooth transitions for theme switching */
 * {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  box-sizing: border-box;
 }
 
-/* Focus styles for accessibility */
 button:focus-visible,
 input:focus-visible,
+textarea:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--ring);
+  outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
 }
 
-/* Loading states */
 .loading-shimmer {
-  background: linear-gradient(90deg, var(--muted) 25%, var(--muted-foreground) 50%, var(--muted) 75%);
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -389,7 +173,6 @@ select:focus-visible {
   }
 }
 
-/* Mobile responsive improvements */
 @media (max-width: 768px) {
   .container {
     padding-left: 1rem;
@@ -400,160 +183,155 @@ select:focus-visible {
     grid-template-columns: 1fr;
   }
   
-  /* Adjust font sizes for mobile */
   h1 {
-    font-size: 2rem; /* 32px */
+    font-size: 2rem;
   }
   
   h2 {
-    font-size: 1.75rem; /* 28px */
+    font-size: 1.5rem;
   }
   
   h3 {
-    font-size: 1.375rem; /* 22px */
+    font-size: 1.25rem;
   }
   
   p {
-    font-size: 1rem; /* 16px */
+    font-size: 1rem;
   }
   
   button {
-    font-size: 0.9375rem; /* 15px */
+    font-size: 0.875rem;
   }
   
   input, textarea, select {
-    font-size: 0.9375rem; /* 15px */
+    font-size: 0.875rem;
   }
 }
 
-/* Navigation tabs styling */
 .nav-tabs {
-  font-size: 1rem; /* 16px */
-  font-weight: 500;
-  letter-spacing: 0.025em;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  display: flex;
+  border-bottom: 1px solid hsl(var(--border));
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .nav-tabs::-webkit-scrollbar {
-  height: 4px;
+  display: none;
 }
 
-/* Status badge styling */
 .status-badge {
-  font-size: 0.875rem; /* 14px */
-  font-weight: 500;
-  letter-spacing: 0.025em;
+  display: inline-flex;
+  align-items: center;
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
   text-transform: uppercase;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0.05em;
 }
 
 .status-active {
-  background-color: var(--chart-2);
-  color: white;
+  background-color: hsl(142.1 76.2% 36.3%);
+  color: hsl(355.7 100% 97.3%);
 }
 
 .status-pending {
-  background-color: var(--chart-4);
-  color: white;
+  background-color: hsl(48 96% 53%);
+  color: hsl(48 96% 10%);
 }
 
 .status-ended {
-  background-color: var(--destructive);
-  color: white;
+  background-color: hsl(0 84.2% 60.2%);
+  color: hsl(0 0% 98%);
 }
 
-/* Form styling */
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .form-label {
-  font-size: 1rem; /* 16px */
-  font-weight: 500;
-  letter-spacing: 0.025em;
   display: block;
   margin-bottom: 0.5rem;
-  color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
 }
 
 .form-control {
-  font-size: 1rem; /* 16px */
-  letter-spacing: 0.025em;
   width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background-color: var(--background);
-  color: var(--foreground);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  padding: 0.75rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
 }
 
 .form-control:focus {
   outline: none;
-  border-color: var(--ring);
-  box-shadow: 0 0 0 3px var(--ring / 20%);
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
 }
 
-/* Button styling */
 .btn-primary {
-  font-size: 1rem; /* 16px */
-  font-weight: 500;
-  letter-spacing: 0.025em;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-foreground) 100%);
-  color: white;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.75rem 1.5rem;
-  border-radius: var(--radius);
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  transition: all 0.2s ease;
 }
 
 .btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background-color: hsl(var(--primary) / 0.9);
 }
 
 .btn-secondary {
-  font-size: 1rem; /* 16px */
-  font-weight: 500;
-  letter-spacing: 0.025em;
-  background: var(--secondary);
-  color: var(--secondary-foreground);
-  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.75rem 1.5rem;
-  border-radius: var(--radius);
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  transition: all 0.2s ease;
 }
 
 .btn-secondary:hover {
-  background: var(--accent);
-  border-color: var(--accent-foreground);
+  background-color: hsl(var(--secondary) / 0.8);
 }
 
 .btn-destructive {
-  font-size: 1rem; /* 16px */
-  font-weight: 500;
-  letter-spacing: 0.025em;
-  background: var(--destructive);
-  color: white;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.75rem 1.5rem;
-  border-radius: var(--radius);
+  background-color: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  transition: all 0.2s ease;
 }
 
 .btn-destructive:hover {
-  background: var(--destructive);
-  opacity: 0.9;
-  transform: translateY(-1px);
+  background-color: hsl(var(--destructive) / 0.9);
 }
 

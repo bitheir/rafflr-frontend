@@ -38,18 +38,15 @@ const CreatorRevenueWithdrawalComponent = () => {
 
       // Get raffle information
       const [
-        owner,
-        totalCreatorRevenue,
-        state,
-        creator
+        creator,
+        totalRevenue,
+        state
       ] = await Promise.all([
-        contract.owner(),
+        contract.creator(),
         contract.totalCreatorRevenue(),
-        contract.state(),
-        contract.creator()
+        contract.state()
       ]);
 
-      const isOwner = owner.toLowerCase() === address.toLowerCase();
       const isCreator = creator.toLowerCase() === address.toLowerCase();
       
       // Map state number to readable state
@@ -60,11 +57,10 @@ const CreatorRevenueWithdrawalComponent = () => {
 
       setRaffleData({
         address: raffleAddress,
-        revenueAmount: ethers.utils.formatEther(totalCreatorRevenue),
-        isOwner,
+        revenueAmount: ethers.utils.formatEther(totalRevenue),
         isCreator,
         raffleState: stateName,
-        totalCreatorRevenue
+        totalRevenue
       });
 
     } catch (error) {
@@ -73,7 +69,6 @@ const CreatorRevenueWithdrawalComponent = () => {
       setRaffleData({
         address: raffleAddress,
         revenueAmount: '0',
-        isOwner: false,
         isCreator: false,
         raffleState: 'error'
       });
@@ -294,7 +289,7 @@ const CreatorRevenueWithdrawalComponent = () => {
             <button
               onClick={handleWithdrawRevenue}
               disabled={loading || !connected || !canWithdraw}
-              className="w-full bg-primary text-primary-foreground px-6 py-3 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <DollarSign className="h-4 w-4" />
               {loading ? 'Withdrawing...' : `Withdraw ${raffleData.revenueAmount} ETH`}
@@ -307,20 +302,6 @@ const CreatorRevenueWithdrawalComponent = () => {
             )}
           </div>
         )}
-
-        {/* Instructions */}
-        <div className="p-4 bg-muted/50 rounded-lg">
-          <h4 className="font-semibold mb-2">How to Withdraw Revenue</h4>
-          <div className="text-sm text-muted-foreground space-y-1">
-            <p>1. Enter the raffle contract address above</p>
-            <p>2. Click "Load Info" to fetch raffle details</p>
-            <p>3. Verify you are the creator and revenue is available</p>
-            <p>4. Click "Withdraw" to transfer revenue to your wallet</p>
-            <p className="mt-2 font-medium">
-              Note: Revenue can only be withdrawn from completed raffles.
-            </p>
-          </div>
-        </div>
 
         {!connected && (
           <div className="text-center p-4 bg-muted rounded-lg">

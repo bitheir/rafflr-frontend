@@ -5,6 +5,7 @@ import { Trophy, AlertCircle } from 'lucide-react';
 import { ethers } from 'ethers';
 import { RaffleCard } from './LandingPage';
 import { PageContainer } from '../components/Layout';
+import { filterActiveRaffles } from '../utils/raffleUtils';
 
 const WhitelistRafflePage = () => {
   const { connected } = useWallet();
@@ -31,7 +32,12 @@ const WhitelistRafflePage = () => {
     }
     setError(null);
     try {
-      const registeredRaffles = await contracts.raffleManager.getAllRaffles ? await contracts.raffleManager.getAllRaffles() : await contracts.raffleManager.getRegisteredRaffles();
+      if (!contracts.raffleManager.getAllRaffles) {
+        setError('RaffleManager contract does not support getAllRaffles.');
+        setRaffles([]);
+        return;
+      }
+      const registeredRaffles = await contracts.raffleManager.getAllRaffles();
       if (!registeredRaffles || registeredRaffles.length === 0) {
         setRaffles([]);
         setError('No raffles found on the blockchain');
@@ -41,7 +47,7 @@ const WhitelistRafflePage = () => {
         try {
           const raffleContract = getContractInstance(raffleAddress, 'raffle');
           if (!raffleContract) return null;
-          const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrized, prizeCollection, state] = await Promise.all([
+          const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrized, prizeCollection, state, erc20PrizeToken, erc20PrizeAmount, ethPrizeAmount] = await Promise.all([
             raffleContract.name(),
             raffleContract.creator(),
             raffleContract.startTime(),
@@ -52,7 +58,10 @@ const WhitelistRafflePage = () => {
             raffleContract.maxTicketsPerParticipant(),
             raffleContract.isPrized(),
             raffleContract.prizeCollection(),
-            raffleContract.state()
+            raffleContract.state(),
+            raffleContract.erc20PrizeToken(),
+            raffleContract.erc20PrizeAmount(),
+            raffleContract.ethPrizeAmount()
           ]);
           let ticketsSold = 0;
           try {
@@ -88,14 +97,23 @@ const WhitelistRafflePage = () => {
             maxTicketsPerParticipant: maxTicketsPerParticipant.toNumber(),
             isPrized,
             prizeCollection: !!isPrized ? prizeCollection : null,
-            state: raffleState
+            stateNum: state,
+            erc20PrizeToken,
+            erc20PrizeAmount,
+            ethPrizeAmount
           };
         } catch {
           return null;
         }
       });
       const raffleData = await Promise.all(rafflePromises);
-      const validRaffles = raffleData.filter(r => r && !r.isPrized);
+      const validRaffles = raffleData.filter(r =>
+        r &&
+        !r.isPrized &&
+        (!r.prizeCollection || r.prizeCollection === ethers.constants.AddressZero) &&
+        (!r.erc20PrizeAmount || r.erc20PrizeAmount.isZero?.() || r.erc20PrizeAmount === '0') &&
+        (!r.ethPrizeAmount || r.ethPrizeAmount.isZero?.() || r.ethPrizeAmount === '0')
+      );
       setRaffles(validRaffles);
       if (validRaffles.length === 0) setError('No whitelist raffles found.');
     } catch (e) {
@@ -139,14 +157,14 @@ const WhitelistRafflePage = () => {
       <PageContainer className="py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">Whitelist Raffles</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
             Welcome Fren! Get your fair chance to secure a spot on that Whitelist! LFG!!!
           </p>
         </div>
         <div className="text-center py-16">
-          <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <Trophy className="h-16 w-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
           <h3 className="text-2xl font-semibold mb-2">Connect Your Wallet</h3>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-gray-500 dark:text-gray-400 mb-6">
             Please connect your wallet to view and interact with raffles on the blockchain.
           </p>
         </div>
@@ -159,13 +177,13 @@ const WhitelistRafflePage = () => {
       <PageContainer className="py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">Whitelist Raffles</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
             Welcome Fren! Get your fair chance to secure a spot on that Whitelist! LFG!!!
           </p>
         </div>
         <div className="text-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg text-muted-foreground">Loading whitelist raffles from blockchain...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-500 dark:text-gray-400">Loading whitelist raffles from blockchain...</p>
         </div>
       </PageContainer>
     );
@@ -176,15 +194,15 @@ const WhitelistRafflePage = () => {
       <PageContainer className="py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">Whitelist Raffles</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
             Welcome Fren! Get your fair chance to secure a spot on that Whitelist! LFG!!!
           </p>
         </div>
         <div className="text-center py-16">
-          <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <Trophy className="h-16 w-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
           <h3 className="text-2xl font-semibold mb-2">Unable to Load Whitelist Raffles</h3>
-          <p className="text-muted-foreground mb-6">{error}</p>
-          <button onClick={() => window.location.reload()} className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">Try Again</button>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">{error}</p>
+          <button onClick={() => window.location.reload()} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-500 transition-colors">Try Again</button>
         </div>
       </PageContainer>
     );
@@ -194,24 +212,24 @@ const WhitelistRafflePage = () => {
     <PageContainer className="pb-16">
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-4">Whitelist Raffles</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
           Welcome Fren! Get your fair chance to secure a spot on that Whitelist! LFG!!!
         </p>
       </div>
       <div className="mt-16">
-        {raffles.length === 0 ? (
-          <div className="text-center py-16">
-            <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-2xl font-semibold mb-2">No Whitelist Raffles Available</h3>
-            <p className="text-muted-foreground">There are currently no whitelist raffles. Check back later!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {[...raffles.filter(r => r.state === 'pending' || r.state === 'active')].reverse().map(raffle => (
-              <RaffleCard key={raffle.id} raffle={raffle} />
-            ))}
-          </div>
-        )}
+      {raffles.length === 0 ? (
+        <div className="text-center py-16">
+            <Trophy className="h-16 w-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
+          <h3 className="text-2xl font-semibold mb-2">No Whitelist Raffles Available</h3>
+            <p className="text-gray-500 dark:text-gray-400">There are currently no whitelist raffles. Check back later!</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[...filterActiveRaffles(raffles)].reverse().map(raffle => (
+            <RaffleCard key={raffle.id} raffle={raffle} />
+          ))}
+        </div>
+      )}
       </div>
     </PageContainer>
   );

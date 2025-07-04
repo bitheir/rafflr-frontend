@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Moon, Sun, Wallet, ChevronDown, User, Plus, ListChecks, Gift, Coins, Search } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
-import { useTheme } from '../contexts/ThemeContext';
 import WalletModal from './wallet/WalletModal';
 import { Link, useNavigate } from 'react-router-dom';
 import { useContract } from '../contexts/ContractContext';
@@ -11,7 +10,6 @@ import { CONTRACT_ADDRESSES } from '../constants';
 
 const Header = () => {
   const { connected, address, formatAddress, disconnect, provider } = useWallet();
-  const { isDark, toggleTheme } = useTheme();
   const { contracts, getContractInstance } = useContract();
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -242,7 +240,10 @@ const Header = () => {
                           <div className="p-2 text-muted-foreground text-xs bg-muted border border-border rounded">Searching...</div>
                         )}
                         {!searchLoading && searchResults.length > 0 && (
-                          <div className="bg-card border border-border rounded-md max-h-60 overflow-y-auto shadow-lg">
+                          <div
+                            className="bg-card border border-border rounded-md max-h-60 overflow-y-auto shadow-lg custom-search-scrollbar"
+                            style={{ overflowX: 'hidden' }}
+                          >
                             {searchResults.map(r => (
                               <div
                                 key={r.address}
@@ -250,7 +251,19 @@ const Header = () => {
                                 onMouseDown={() => handleSearchResultClick(r.address)}
                               >
                                 <div className="font-semibold text-foreground">{r.name}</div>
-                                <div className="text-xs text-muted-foreground font-mono">{r.address}</div>
+                                <div
+                                  className="text-xs text-muted-foreground font-mono"
+                                  style={{
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    display: 'block',
+                                    maxWidth: '100%',
+                                  }}
+                                  title={r.address}
+                                >
+                                  {r.address}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -313,16 +326,6 @@ const Header = () => {
                           <Coins className="h-5 w-5" />
                           ETH & Token Giveaways
                         </Link>
-                        <div className="my-0 border-t border-border/40" />
-                        {/* Theme Switch in Dropdown - now sixth position */}
-                        <button
-                          onClick={toggleTheme}
-                          className="flex items-center gap-2 px-4 py-2 text-sm font-normal hover:bg-primary/10 transition-colors rounded-lg w-full m-0"
-                        >
-                          {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                          <span>Theme</span>
-                        </button>
-                        <div className="my-0 border-t border-border/40" />
                         <button
                           onClick={() => { disconnect(); setShowDropdown(false); }}
                           className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-red-100/20 transition-colors rounded-lg"
@@ -385,5 +388,22 @@ export const PageContainer = ({
     </div>
   );
 };
+
+/* Custom scrollbar for search dropdown */
+<style>
+{`
+.custom-search-scrollbar::-webkit-scrollbar {
+  height: 6px;
+  max-height: 6px;
+}
+.custom-search-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.custom-search-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+`}
+</style>
 
 

@@ -13,5 +13,7 @@
   { "inputs": [], "name": "minter", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" },
   { "inputs": [{ "internalType": "address", "name": "_minter", "type": "address" }, { "internalType": "bool", "name": "approved", "type": "bool" }], "name": "setMinterApproval", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [], "name": "unlockMinterApproval", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
-  { "inputs": [], "name": "lockMinterApproval", "outputs": [], "stateMutability": "nonpayable", "type": "function" }
+  { "inputs": [], "name": "lockMinterApproval", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+  { "inputs": [], "name": "name", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "view", "type": "function" },
+  { "inputs": [], "name": "symbol", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "view", "type": "function" }
 ] 
