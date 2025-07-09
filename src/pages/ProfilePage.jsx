@@ -958,6 +958,9 @@ const ProfilePage = () => {
         throw new Error('Failed to get raffle contract');
       }
 
+      const refundClaimed = await raffleContract.refundedNonWinningTickets(address);
+      const refundClaimedBool = refundClaimed && refundClaimed.gt && refundClaimed.gt(0);
+
       const result = await executeTransaction(raffleContract.claimRefund);
       
       if (result.success) {

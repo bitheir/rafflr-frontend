@@ -25,6 +25,8 @@ const RaffleCard = ({ raffle }) => {
   const [timeLabel, setTimeLabel] = useState('');
   const [timeRemaining, setTimeRemaining] = useState('');
   const [erc20Symbol, setErc20Symbol] = useState('');
+  const { getContractInstance } = useContract();
+  const [ticketsSold, setTicketsSold] = useState(null);
 
   useEffect(() => {
     let interval;
@@ -32,6 +34,14 @@ const RaffleCard = ({ raffle }) => {
       const now = Math.floor(Date.now() / 1000);
       let label = '';
       let seconds = 0;
+      if (raffle.stateNum === 2 || raffle.stateNum === 3 || raffle.stateNum === 4 || raffle.stateNum === 5 || raffle.stateNum === 6 || raffle.stateNum === 7 || raffle.stateNum === 8) {
+        // Ended or completed or other terminal states
+        label = 'Duration';
+        seconds = raffle.duration;
+        setTimeLabel(label);
+        setTimeRemaining(formatDuration(seconds));
+        return;
+      }
       if (now < raffle.startTime) {
         label = 'Starts In';
         seconds = raffle.startTime - now;
@@ -54,6 +64,17 @@ const RaffleCard = ({ raffle }) => {
       formatted += `${secs}s`;
       return formatted.trim();
     }
+    function formatDuration(seconds) {
+      const days = Math.floor(seconds / 86400);
+      const hours = Math.floor((seconds % 86400) / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      let formatted = '';
+      if (days > 0) formatted += `${days}d `;
+      if (hours > 0 || days > 0) formatted += `${hours}h `;
+      if (minutes > 0 || hours > 0 || days > 0) formatted += `${minutes}m`;
+      if (!formatted) formatted = '0m';
+      return formatted.trim();
+    }
     updateTimer();
     interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
@@ -70,10 +91,7 @@ const RaffleCard = ({ raffle }) => {
           setErc20Symbol(window.__erc20SymbolCache[raffle.erc20PrizeToken]);
           return;
         }
-        
-        // Add a small delay to prevent overwhelming the RPC provider
         await new Promise(resolve => setTimeout(resolve, 100));
-        
         try {
           const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : ethers.getDefaultProvider();
           const erc20Abi = ["function symbol() view returns (string)"];
@@ -92,6 +110,42 @@ const RaffleCard = ({ raffle }) => {
     fetchSymbol();
     return () => { isMounted = false; };
   }, [raffle.erc20PrizeToken]);
+
+  // Fetch tickets sold using the same logic as RaffleDetailPage
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchTicketsSold() {
+      try {
+        const raffleContract = getContractInstance && getContractInstance(raffle.address, 'raffle');
+        if (!raffleContract) {
+          if (isMounted) setTicketsSold(null);
+          return;
+        }
+        let count = 0;
+        try {
+          const participantsCount = await raffleContract.getParticipantsCount();
+          count = participantsCount.toNumber();
+        } catch (error) {
+          // Fallback: count participants by iterating
+          let index = 0;
+          while (true) {
+            try {
+              await raffleContract.participants(index);
+              count++;
+              index++;
+            } catch {
+              break;
+            }
+          }
+        }
+        if (isMounted) setTicketsSold(count);
+      } catch (e) {
+        if (isMounted) setTicketsSold(null);
+      }
+    }
+    fetchTicketsSold();
+    // Only refetch if address changes
+  }, [raffle.address, getContractInstance]);
 
   const getStatusBadge = () => {
     const label = RAFFLE_STATE_LABELS[raffle.stateNum] || 'Unknown';
@@ -145,7 +199,7 @@ const RaffleCard = ({ raffle }) => {
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-gray-500 dark:text-gray-400">Tickets Sold:</span>
-          <span>{raffle.ticketsSold > 0 ? `${raffle.ticketsSold} / ${raffle.ticketLimit}` : 'N/A'}</span>
+          <span>{ticketsSold !== null ? `${ticketsSold} / ${raffle.ticketLimit}` : 'Loading...'}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-gray-500 dark:text-gray-400">Winners:</span>
@@ -363,7 +417,7 @@ const LandingPage = () => {
       if (error.message && error.message.includes('Too Many Requests')) {
         setError('Rate limit exceeded. Please wait a moment and refresh the page, or consider upgrading your RPC provider.');
       } else {
-        setError('Failed to fetch raffles from blockchain. Please check your network connection and try again.');
+      setError('Failed to fetch raffles from blockchain. Please check your network connection and try again.');
       }
       setRaffles([]);
     } finally {
@@ -421,11 +475,6 @@ const LandingPage = () => {
           <p className="text-gray-500 dark:text-gray-400 mb-6">
             Please connect your wallet to view and interact with raffles on the blockchain.
           </p>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
-            <p className="text-sm text-blue-800">
-              <strong>Note:</strong> Make sure you're connected to the Sepolia testnet to view the deployed raffles.
-            </p>
-          </div>
         </div>
       </PageContainer>
     );

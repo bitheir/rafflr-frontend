@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Ticket, Clock, Trophy, Users, ArrowLeft, AlertCircle, CheckCircle, DollarSign, Trash2 } from 'lucide-react';
+import { Ticket, Clock, Trophy, Users, ArrowLeft, AlertCircle, CheckCircle, DollarSign, Trash2, Info } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
 import { ethers } from 'ethers';
@@ -24,16 +24,20 @@ const RAFFLE_STATE_LABELS = [
 ];
 
 const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
-  const { connected } = useWallet();
+  const { connected, address } = useWallet();
+  const { getContractInstance, executeTransaction } = useContract();
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [socialTasks, setSocialTasks] = useState([]);
   const [tasksCompleted, setTasksCompleted] = useState(false);
   const [loadingTasks, setLoadingTasks] = useState(true);
+  const [requestingRandomness, setRequestingRandomness] = useState(false);
+  const [userTickets, setUserTickets] = useState(0);
 
   useEffect(() => {
     loadSocialTasks();
-  }, [raffle.address]);
+    fetchUserTickets();
+  }, [raffle.address, address]);
 
   const loadSocialTasks = async () => {
     if (!raffle.address) return;
@@ -66,6 +70,21 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
     }
   };
 
+  const fetchUserTickets = async () => {
+    if (!raffle.address || !address) {
+      setUserTickets(0);
+      return;
+    }
+    try {
+      const raffleContract = getContractInstance(raffle.address, 'raffle');
+      if (!raffleContract) return;
+      const tickets = await raffleContract.ticketsPurchased(address);
+      setUserTickets(tickets.toNumber ? tickets.toNumber() : Number(tickets));
+    } catch (e) {
+      setUserTickets(0);
+    }
+  };
+
   const handleTasksCompleted = (completed) => {
     setTasksCompleted(completed);
   };
@@ -92,6 +111,25 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
     }
   };
 
+  const handleRequestRandomness = async () => {
+    setRequestingRandomness(true);
+    try {
+      const raffleContract = getContractInstance(raffle.address, 'raffle');
+      if (!raffleContract) throw new Error('Failed to get raffle contract');
+      const result = await executeTransaction(raffleContract.requestRandomWords);
+      if (result.success) {
+        alert('Randomness requested successfully!');
+        window.location.reload();
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      alert('Failed to request randomness: ' + error.message);
+    } finally {
+      setRequestingRandomness(false);
+    }
+  };
+
   const canPurchaseTickets = () => {
     // Can only purchase tickets if raffle is active AND tasks are completed
     return raffle.state?.toLowerCase() === 'active' && tasksCompleted;
@@ -115,6 +153,30 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
     raffle.maxTicketsPerParticipant,
     raffle.userTicketsRemaining || raffle.maxTicketsPerParticipant
   );
+
+  // Replace purchase button with randomness button if raffle ended and user is a participant
+  if (raffle.stateNum === 2 && userTickets > 0) {
+  return (
+      <div className="bg-background border border-border rounded-lg p-6">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Ticket className="h-5 w-5" />
+          Request Randomness
+        </h3>
+        <div className="text-center py-8">
+          <button
+            onClick={handleRequestRandomness}
+            disabled={requestingRandomness}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-md hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+          >
+            {requestingRandomness ? 'Requesting...' : 'Request Randomness'}
+          </button>
+          <p className="text-muted-foreground mt-4">
+            The raffle has ended. As a participant, you can request the random draw to select winners.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background border border-border rounded-lg p-6">
@@ -237,10 +299,10 @@ const PrizeImageCard = ({ raffle }) => {
       try {
         let uri;
         if (raffle.standard === 0) {
-          const contract = getContractInstance(raffle.prizeCollection, 'erc721prize');
+          const contract = getContractInstance(raffle.prizeCollection, 'erc721Prize');
           uri = await contract.tokenURI(raffle.prizeTokenId);
         } else if (raffle.standard === 1) {
-          const contract = getContractInstance(raffle.prizeCollection, 'erc1155prize');
+          const contract = getContractInstance(raffle.prizeCollection, 'erc1155Prize');
           uri = await contract.uri(raffle.prizeTokenId);
         } else {
           setImageUrl(null);
@@ -292,15 +354,30 @@ const WinnersSection = ({ raffle }) => {
   const [eligibleForRefund, setEligibleForRefund] = useState(false);
   const [refundClaimed, setRefundClaimed] = useState(false);
   const [refundableAmount, setRefundableAmount] = useState(null);
+  const [nonWinningTickets, setNonWinningTickets] = useState(0);
+
+  // Winner/refund logic for rendering
+  const winnerObj = winners.find(w => w.address.toLowerCase() === connectedAddress?.toLowerCase());
+  const shouldShowClaimPrize = !!winnerObj && raffle.isPrized && (raffle.stateNum === 4 || raffle.stateNum === 7);
+  const prizeAlreadyClaimed = winnerObj && winnerObj.prizeClaimed;
+  const shouldShowClaimRefund =
+    raffle.isPrized &&
+    (raffle.stateNum === 4 || raffle.stateNum === 7) &&
+    eligibleForRefund &&
+    refundableAmount && refundableAmount.gt && refundableAmount.gt(0);
 
   useEffect(() => {
     const fetchWinners = async () => {
-      if (raffle.state !== 'completed' && raffle.state !== 'allPrizesClaimed') {
+      console.log('Fetching winners for raffle state:', raffle.stateNum, raffle.state);
+      
+      if (raffle.stateNum !== 4 && raffle.stateNum !== 7) {
+        console.log('Raffle not in completed state, skipping winners fetch');
         setWinners([]);
         setIsWinner(false);
         setEligibleForRefund(false);
         setRefundClaimed(false);
         setRefundableAmount(null);
+        setNonWinningTickets(0); // Reset non-winning tickets
         return;
       }
       setLoading(true);
@@ -314,55 +391,87 @@ const WinnersSection = ({ raffle }) => {
         // Fetch winnersCount
         const winnersCount = await raffleContract.winnersCount();
         const count = winnersCount.toNumber ? winnersCount.toNumber() : Number(winnersCount);
+        
+        console.log('Winners count:', count);
+        
+        // Only proceed if there are winners
+        if (count === 0) {
+          console.log('No winners found');
+          setWinners([]);
+          setLoading(false);
+          return;
+        }
+        
         // Fetch each winner by index
-        const winnersArray = await Promise.all(
-          Array.from({ length: count }, async (_, i) => {
+        const winnersArray = [];
+        for (let i = 0; i < count; i++) {
             try {
               const winnerAddress = await raffleContract.winners(i);
+              console.log(`Winner at index ${i}:`, winnerAddress);
+              
+              // Skip if the address is zero (no winner at this index)
+              if (winnerAddress === ethers.constants.AddressZero || winnerAddress === '0x0000000000000000000000000000000000000000') {
+                console.log(`Skipping zero address at index ${i}`);
+                continue;
+              }
+              
               const claimedWins = await raffleContract.claimedWins(winnerAddress);
               const prizeClaimed = await raffleContract.prizeClaimed(winnerAddress);
-              return {
+              
+              winnersArray.push({
                 address: winnerAddress,
                 index: i,
                 claimedWins: claimedWins.toNumber ? claimedWins.toNumber() : Number(claimedWins),
                 prizeClaimed: prizeClaimed
-              };
+              });
             } catch (error) {
-              return {
-                address: '0x0000000000000000000000000000000000000000',
-                index: i,
-                claimedWins: 0,
-                prizeClaimed: false
-              };
+              console.warn(`Error fetching winner at index ${i}:`, error);
+              // Continue to next winner instead of adding a zero address
+              continue;
             }
-          })
-        );
+        }
+        console.log('Final winners array:', winnersArray);
         setWinners(winnersArray);
         // Check if connected user is a winner
         const winner = winnersArray.find(w => w.address.toLowerCase() === connectedAddress?.toLowerCase());
         setIsWinner(!!winner);
-        // Check refund eligibility for connected user
+        // Fetch refundable amount using getRefundableAmount
         if (connectedAddress && raffle.isPrized) {
-          const refundClaimedVal = await raffleContract.refundClaimed(connectedAddress);
-          setRefundClaimed(refundClaimedVal);
-          const refundable = await raffleContract.refundableAmount(connectedAddress);
-          setRefundableAmount(refundable);
-          setEligibleForRefund(refundable && refundable.gt && refundable.gt(0) && !refundClaimedVal);
+          try {
+            const refundable = await raffleContract.getRefundableAmount(connectedAddress);
+            setRefundableAmount(refundable);
+            setEligibleForRefund(refundable && refundable.gt && refundable.gt(0));
+          } catch (e) {
+            setRefundableAmount(null);
+            setEligibleForRefund(false);
+          }
         } else {
           setEligibleForRefund(false);
         }
+        // Remove old nonWinningTickets logic
+        setNonWinningTickets(0);
       } catch (error) {
         setWinners([]);
         setIsWinner(false);
         setEligibleForRefund(false);
         setRefundClaimed(false);
         setRefundableAmount(null);
+        setNonWinningTickets(0); // Reset non-winning tickets on error
       } finally {
         setLoading(false);
       }
     };
     fetchWinners();
   }, [raffle, getContractInstance, connectedAddress]);
+
+  useEffect(() => {
+    console.log('[WinnersSection Debug]');
+    console.log('nonWinningTickets:', nonWinningTickets);
+    console.log('shouldShowClaimRefund:', shouldShowClaimRefund);
+    console.log('refundClaimed:', refundClaimed);
+    console.log('raffle.stateNum:', raffle.stateNum);
+    console.log('raffle.isPrized:', raffle.isPrized);
+  }, [nonWinningTickets, shouldShowClaimRefund, refundClaimed, raffle]);
 
   const handleClaimPrize = async () => {
     if (!connectedAddress || !raffle || !getContractInstance) {
@@ -462,7 +571,7 @@ const WinnersSection = ({ raffle }) => {
     // 5. User hasn't claimed yet
     if (!connectedAddress || !raffle.isPrized) return false;
     
-    if (raffle.state !== 'completed' && raffle.state !== 'allPrizesClaimed') return false;
+    if (raffle.stateNum !== 4 && raffle.stateNum !== 7) return false;
     
     const winner = winners.find(w => 
       w.address.toLowerCase() === connectedAddress.toLowerCase()
@@ -475,7 +584,7 @@ const WinnersSection = ({ raffle }) => {
     // Only for completed raffles, prized raffles, not whitelist, user is eligible, and not already claimed
     return (
       raffle.isPrized &&
-      (raffle.state === 'completed' || raffle.state === 'allPrizesClaimed') &&
+      (raffle.stateNum === 4 || raffle.stateNum === 7) &&
       eligibleForRefund &&
       !refundClaimed &&
       refundableAmount && refundableAmount.gt && refundableAmount.gt(0)
@@ -531,8 +640,7 @@ const WinnersSection = ({ raffle }) => {
       case 'Completed':
       case 'All Prizes Claimed':
         return (
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Winners Announced</h3>
+          <div className="bg-background rounded-lg">
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -541,7 +649,12 @@ const WinnersSection = ({ raffle }) => {
             ) : winners.length > 0 ? (
               <div className="space-y-3">
                 {winners.map((winner) => (
-                  <div key={winner.index} className={`flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-800 rounded-lg ${connectedAddress && winner.address.toLowerCase() === connectedAddress.toLowerCase() ? 'bg-green-100 border-green-400 text-green-900 font-bold' : ''}`}>
+                  <div key={winner.index} className="flex items-center justify-between p-3 bg-background border border-border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      {/* Trophy icon if connected account is this winner */}
+                      {connectedAddress && winner.address.toLowerCase() === connectedAddress.toLowerCase() && (
+                        <Trophy className="h-5 w-5 text-yellow-500" title="You!" />
+                      )}
                     <div>
                       <p className="font-medium">Winner #{winner.index + 1}</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">
@@ -552,6 +665,7 @@ const WinnersSection = ({ raffle }) => {
                           Prizes claimed: {winner.claimedWins}
                         </p>
                       )}
+                      </div>
                     </div>
                     <div className="text-right">
                       {raffle.isPrized ? (
@@ -566,47 +680,6 @@ const WinnersSection = ({ raffle }) => {
                     </div>
                   </div>
                 ))}
-                
-                {/* Claim Prize/Refund Buttons - Only show for eligible users in completed prized raffles */}
-                {(canClaimPrize() || canClaimRefund()) && (
-                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex flex-col items-center gap-3">
-                    {canClaimPrize() && (
-                      <div className="w-full">
-                        <Trophy className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                        <p className="text-sm text-blue-800 mb-3">
-                          Congratulations! You won this raffle. Click below to claim your {getPrizeTypeDescription()}.
-                        </p>
-                        <Button
-                          onClick={handleClaimPrize}
-                          disabled={claimingPrize}
-                          className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
-                        >
-                          <Trophy className="h-4 w-4" />
-                          {claimingPrize ? 'Claiming...' : 'Claim Prize'}
-                        </Button>
-                      </div>
-                    )}
-                    {canClaimRefund() && (
-                      <div className="w-full">
-                        <DollarSign className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                        <p className="text-sm text-green-800 mb-3">
-                          You have refundable non-winning tickets. Click below to claim your refund.
-                        </p>
-                        <Button
-                          onClick={handleClaimRefund}
-                          disabled={claimingRefund}
-                          className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-6 py-2 rounded-lg hover:from-green-600 hover:to-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
-                        >
-                          <DollarSign className="h-4 w-4" />
-                          {claimingRefund ? 'Claiming...' : 'Claim Refund'}
-                        </Button>
-                        {refundClaimed && (
-                          <span className="text-green-600 text-xs mt-2">Refund already claimed</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             ) : (
               <p className="text-gray-500 dark:text-gray-400 text-center py-4">No winners data available.</p>
@@ -649,29 +722,33 @@ const WinnersSection = ({ raffle }) => {
 
   return (
     <Card className="h-full flex flex-col bg-background">
-      <CardHeader>
-        <CardTitle>Winners</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-xl">Winners</CardTitle>
+        <div className="flex gap-2">
+          {shouldShowClaimPrize && (
+            <Button
+              onClick={handleClaimPrize}
+              disabled={claimingPrize || prizeAlreadyClaimed}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {/* <Trophy className="h-4 w-4" /> Removed icon */}
+              {claimingPrize ? 'Claiming...' : prizeAlreadyClaimed ? 'Prize Claimed' : 'Claim Prize'}
+            </Button>
+          )}
+          {shouldShowClaimRefund && (
+            <Button
+              onClick={handleClaimRefund}
+              disabled={claimingRefund}
+              className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-6 py-2 rounded-lg hover:from-green-600 hover:to-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <DollarSign className="h-4 w-4" />
+              {claimingRefund ? 'Claiming...' : `Claim Refund${refundableAmount && refundableAmount.gt && refundableAmount.gt(0) ? ` (${ethers.utils.formatEther(refundableAmount)} ETH)` : ''}`}
+            </Button>
+          )}
+        </div>
       </CardHeader>
-      <CardContent className="overflow-y-auto max-h-96">
-        {loading ? (
-          <div className="text-center py-8 text-muted-foreground">Loading winners...</div>
-        ) : winners.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">No winners yet.</div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {winners.map((winner) => (
-              <div
-                key={winner.index}
-                className={`bg-gray-100 dark:bg-gray-800 rounded-md py-2 px-4 flex items-center justify-between border border-border ${connectedAddress && winner.address.toLowerCase() === connectedAddress.toLowerCase() ? 'bg-green-100 border-green-400 text-green-900 font-bold' : ''}`}
-              >
-                <span className="font-mono text-sm break-all">{winner.address}</span>
-                {winner.prizeClaimed && (
-                  <CheckCircle className="h-4 w-4 text-green-500 ml-2" />
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+      <CardContent className="overflow-y-auto max-h-[600px] pb-4">
+        {getStateDisplay()}
       </CardContent>
     </Card>
   );
@@ -721,6 +798,20 @@ function ERC20PrizeAmount({ token, amount }) {
       <span>{ethers.utils.formatUnits(amount, 18)} {symbol}</span>
     </div>
   );
+}
+
+function getRefundability(raffle) {
+  if (!raffle) return { label: 'Non-Refundable', refundable: false, reason: 'Unknown' };
+  // If deleted before Ended, always refundable
+  if (raffle.state === 'Deleted') {
+    return { label: 'All Tickets Refundable', refundable: true, reason: 'Raffle was deleted before ending. All tickets are refundable.' };
+  }
+  // NFT-prized, single winner, not deleted
+  if (raffle.isPrized && raffle.winnersCount === 1 && raffle.standard !== undefined && (raffle.standard === 0 || raffle.standard === 1)) {
+    return { label: 'Tickets Refundable if Deleted', refundable: false, reason: 'Single-winner NFT raffles are not refundable unless deleted before ending.' };
+  }
+  // Otherwise, refundable
+  return { label: 'Non-winning Tickets Refundable', refundable: true, reason: 'This raffle supports refunds for non-winning tickets.' };
 }
 
 const RaffleDetailPage = () => {
@@ -1453,8 +1544,8 @@ const RaffleDetailPage = () => {
       </div>
 
       {/* Raffle Info */}
-      <div className="mb-8 p-6 bg-gray-100 dark:bg-gray-800/20 rounded-lg">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+      <div className="mb-8 p-6 bg-background border border-border rounded-lg">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 text-center items-center">
           <div>
             <p className="text-2xl font-bold">{raffle.ticketsSold}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">Tickets Sold</p>
@@ -1470,6 +1561,21 @@ const RaffleDetailPage = () => {
           <div>
             <p className="text-2xl font-bold">{timeRemaining}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">Time Remaining</p>
+          </div>
+          {/* Refundability Tag as a column */}
+          <div className="flex justify-center lg:justify-end items-center h-full w-full">
+            {(() => {
+              const { refundable, reason, label } = getRefundability(raffle);
+              return (
+                <span className={`px-3 py-1 rounded-full font-semibold ${refundable ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'} text-xs`}
+                  title={reason}
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  {label}
+                  <Info className="inline-block ml-1 h-4 w-4 text-gray-400 align-middle" title={reason} />
+                </span>
+              );
+            })()}
           </div>
         </div>
       </div>
