@@ -231,42 +231,42 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
         Purchase Tickets
       </h3>
 
-      <div className="space-y-4">
-        {/* Social Media Tasks Section */}
-        {socialTasks.length > 0 && (
-          <div className="mb-6">
-            <SocialTaskCompletion
-              raffleAddress={raffle.address}
-              tasks={socialTasks}
-              onTasksCompleted={handleTasksCompleted}
-            />
-          </div>
-        )}
+        <div className="space-y-4">
+          {/* Social Media Tasks Section */}
+          {socialTasks.length > 0 && (
+            <div className="mb-6">
+              <SocialTaskCompletion
+                raffleAddress={raffle.address}
+                tasks={socialTasks}
+                onTasksCompleted={handleTasksCompleted}
+              />
+            </div>
+          )}
 
         {/* Replace the grid in the purchase card with the new arrangement */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
             <span className="text-muted-foreground">Ticket Price{usesCustomPrice === true ? ' (set by Creator)' : usesCustomPrice === false ? ' (Protocol Ticket Fee)' : ''}:</span>
-            <p className="font-semibold text-lg">{ethers.utils.formatEther(raffle.ticketPrice || '0')} ETH</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Remaining tickets:</span>
-            <p className="font-semibold text-lg">{remainingTickets}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Your tickets:</span>
+              <p className="font-semibold text-lg">{ethers.utils.formatEther(raffle.ticketPrice || '0')} ETH</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Remaining tickets:</span>
+              <p className="font-semibold text-lg">{remainingTickets}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Your tickets:</span>
             <p className="font-semibold text-lg">{userTickets || 0}</p>
           </div>
           <div>
             <span className="text-muted-foreground">Winning Chance:</span>
             <p className="font-semibold text-lg">{winningChance !== null ? `${winningChance}%` : 'N/A'}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Max per user:</span>
-            <p className="font-semibold text-lg">{raffle.maxTicketsPerParticipant}</p>
-          </div>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Max per user:</span>
+              <p className="font-semibold text-lg">{raffle.maxTicketsPerParticipant}</p>
+            </div>
           <div></div>
-        </div>
+          </div>
 
         {/* Button/message area */}
         {raffle.stateNum === 2 && userTickets > 0 ? (
@@ -297,46 +297,46 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
             Limit Reached
           </button>
         ) : (
-          <>
-            <div>
-              <label className="block text-sm font-medium mb-2">Quantity</label>
-              <input
-                type="number"
-                min="1"
-                max={maxPurchasable}
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, Math.min(maxPurchasable, parseInt(e.target.value) || 1)))}
-                className="w-full px-3 py-2 border border-border rounded-md bg-background"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Maximum: {maxPurchasable} tickets
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-2">Quantity</label>
+                <input
+                  type="number"
+                  min="1"
+                  max={maxPurchasable}
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(1, Math.min(maxPurchasable, parseInt(e.target.value) || 1)))}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Maximum: {maxPurchasable} tickets
+                </p>
+              </div>
+              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-md">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Total Cost:</span>
+                  <span className="text-lg font-bold">{totalCost} ETH</span>
+                </div>
+              </div>
+              <button
+                onClick={handlePurchase}
+                disabled={loading || !connected || !canPurchaseTickets()}
+                className="w-full bg-blue-600 dark:bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Ticket className="h-4 w-4" />
+                {loading ? 'Processing...' : `Purchase ${quantity} Ticket${quantity > 1 ? 's' : ''}`}
+              </button>
+            </>
+          )}
+
+          {!connected && (
+            <div className="text-center py-4">
+              <p className="text-muted-foreground">
+                Please connect your wallet to purchase tickets.
               </p>
             </div>
-            <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-md">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Total Cost:</span>
-                <span className="text-lg font-bold">{totalCost} ETH</span>
-              </div>
-            </div>
-            <button
-              onClick={handlePurchase}
-              disabled={loading || !connected || !canPurchaseTickets()}
-              className="w-full bg-blue-600 dark:bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              <Ticket className="h-4 w-4" />
-              {loading ? 'Processing...' : `Purchase ${quantity} Ticket${quantity > 1 ? 's' : ''}`}
-            </button>
-          </>
-        )}
-
-        {!connected && (
-          <div className="text-center py-4">
-            <p className="text-muted-foreground">
-              Please connect your wallet to purchase tickets.
-            </p>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
     </div>
   );
 };
@@ -704,16 +704,35 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
                 <p className="text-muted-foreground">Loading winners...</p>
               </div>
             ) : winners.length > 0 ? (
-              <div>
+              <div style={{ maxHeight: '320px', overflowY: 'auto' }} className="px-3">
                 {winners.map((winner, i) => (
-                  <div key={winner.index} className={`p-2 bg-background border border-border rounded-lg${i !== winners.length - 1 ? ' mb-2' : ''}`}>
-                    <p
-                      className="text-blue-600 dark:text-blue-400 font-mono cursor-pointer underline text-xs text-center"
-                      onClick={() => handleWinnerClick(winner, i)}
+                  connectedAddress && winner.address.toLowerCase() === connectedAddress.toLowerCase() ? (
+                    <div
+                      key={winner.index}
+                      className={`p-[2px] rounded-lg${i !== winners.length - 1 ? ' mb-2' : ''} border-2 border-[#FFD700]`}
                     >
-                      {winner.address}
-                    </p>
-                  </div>
+                      <div className="p-2 bg-background rounded-lg w-full h-full">
+                        <p
+                          className="text-blue-600 dark:text-blue-400 font-mono cursor-pointer underline text-xs text-center"
+                          onClick={() => handleWinnerClick(winner, i)}
+                        >
+                          {winner.address}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      key={winner.index}
+                      className={`p-2 bg-background border border-border rounded-lg${i !== winners.length - 1 ? ' mb-2' : ''}`}
+                    >
+                      <p
+                        className="text-blue-600 dark:text-blue-400 font-mono cursor-pointer underline text-xs text-center"
+                        onClick={() => handleWinnerClick(winner, i)}
+                      >
+                        {winner.address}
+                      </p>
+                    </div>
+                  )
                 ))}
                 {/* Render the modal only once, after the winners list */}
                 {openStatsIndex !== null && winners[openStatsIndex] && (
@@ -823,7 +842,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
   };
 
   return (
-    <Card className="h-full flex flex-col bg-background">
+    <Card className="bg-background">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-xl">Winners</CardTitle>
         <div className="flex gap-2">
@@ -848,7 +867,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex-1 min-h-0 overflow-y-auto pb-0 pt-0">
+      <CardContent className="overflow-y-auto p-2">
         {getStateDisplay()}
       </CardContent>
     </Card>
@@ -1133,10 +1152,10 @@ const RaffleDetailPage = () => {
       if (now < raffle.startTime) {
         label = 'Starts In';
         seconds = raffle.startTime - now;
-      } else {
+        } else {
         label = 'Ends In';
         seconds = (raffle.startTime + raffle.duration) - now;
-      }
+        }
       setTimeLabel(label);
       setTimeValue(seconds > 0 ? formatTime(seconds) : 'Ended');
     }
@@ -1743,7 +1762,7 @@ const RaffleDetailPage = () => {
                     </div>
                   )}
                 </div>
-              )}
+            )}
           </div>
         </div>
         
