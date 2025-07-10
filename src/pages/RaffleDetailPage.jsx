@@ -704,23 +704,15 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
                 <p className="text-muted-foreground">Loading winners...</p>
               </div>
             ) : winners.length > 0 ? (
-              <div className="space-y-3">
+              <div>
                 {winners.map((winner, i) => (
-                  <div key={winner.index} className="flex items-center justify-between p-3 bg-background border border-border rounded-lg relative">
-                    <div className="flex items-center gap-2">
-                      {connectedAddress && winner.address.toLowerCase() === connectedAddress.toLowerCase() && (
-                        <Trophy className="h-5 w-5 text-yellow-500" title="You!" />
-                      )}
-                    <div>
-                      <p className="font-medium">Winner #{winner.index + 1}</p>
-                        <p
-                          className="text-sm text-blue-600 dark:text-blue-400 font-mono cursor-pointer underline"
-                          onClick={() => handleWinnerClick(winner, i)}
-                        >
-                        {winner.address.slice(0, 10)}...{winner.address.slice(-8)}
-                      </p>
-                    </div>
-                    </div>
+                  <div key={winner.index} className={`p-2 bg-background border border-border rounded-lg${i !== winners.length - 1 ? ' mb-2' : ''}`}>
+                    <p
+                      className="text-blue-600 dark:text-blue-400 font-mono cursor-pointer underline text-xs text-center"
+                      onClick={() => handleWinnerClick(winner, i)}
+                    >
+                      {winner.address}
+                    </p>
                   </div>
                 ))}
                 {/* Render the modal only once, after the winners list */}
@@ -856,7 +848,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
           )}
         </div>
       </CardHeader>
-      <CardContent className="overflow-y-auto max-h-[600px] pb-4">
+      <CardContent className="flex-1 min-h-0 overflow-y-auto pb-0 pt-0">
         {getStateDisplay()}
       </CardContent>
     </Card>
@@ -1815,9 +1807,9 @@ const RaffleDetailPage = () => {
       </div>
 
       {/* Main Content - Split Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
         {/* Left Half - Raffle Engagement */}
-        <div className="space-y-6">
+        <div className="space-y-6 h-full">
           <TicketPurchaseSection raffle={raffle} onPurchase={handlePurchaseTickets} timeRemaining={timeRemaining} />
           
           {/* Additional Raffle Details */}
