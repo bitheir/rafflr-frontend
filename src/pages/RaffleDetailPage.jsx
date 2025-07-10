@@ -221,30 +221,6 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
     raffle.userTicketsRemaining || raffle.maxTicketsPerParticipant
   );
 
-  // Replace purchase button with randomness button if raffle ended and user is a participant
-  if (raffle.stateNum === 2 && userTickets > 0) {
-  return (
-      <div className="bg-background border border-border rounded-lg p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Ticket className="h-5 w-5" />
-          Request Randomness
-        </h3>
-        <div className="text-center py-8">
-          <button
-            onClick={handleRequestRandomness}
-            disabled={requestingRandomness}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-md hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
-          >
-            {requestingRandomness ? 'Requesting...' : 'Request Randomness'}
-          </button>
-          <p className="text-muted-foreground mt-4">
-            The raffle has ended. As a participant, you can request the random draw to select winners.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const now = Math.floor(Date.now() / 1000);
   const canActivate = raffle && raffle.startTime ? now >= raffle.startTime : false;
 
@@ -255,120 +231,112 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
         Purchase Tickets
       </h3>
 
-      {remainingTickets <= 0 ? (
-        <div className="text-center py-8">
-          <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">All tickets have been sold!</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {/* Social Media Tasks Section */}
-          {socialTasks.length > 0 && (
-            <div className="mb-6">
-              <SocialTaskCompletion
-                raffleAddress={raffle.address}
-                tasks={socialTasks}
-                onTasksCompleted={handleTasksCompleted}
-              />
-            </div>
-          )}
-
-          {/* Replace the grid in the purchase card with the new arrangement */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Ticket Price{usesCustomPrice === true ? ' (set by Creator)' : usesCustomPrice === false ? ' (Protocol Ticket Fee)' : ''}:</span>
-              <p className="font-semibold text-lg">{ethers.utils.formatEther(raffle.ticketPrice || '0')} ETH</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Remaining tickets:</span>
-              <p className="font-semibold text-lg">{remainingTickets}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Your tickets:</span>
-              <p className="font-semibold text-lg">{userTickets || 0}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Winning Chance:</span>
-              <p className="font-semibold text-lg">{winningChance !== null ? `${winningChance}%` : 'N/A'}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Max per user:</span>
-              <p className="font-semibold text-lg">{raffle.maxTicketsPerParticipant}</p>
-            </div>
-            <div></div>
+      <div className="space-y-4">
+        {/* Social Media Tasks Section */}
+        {socialTasks.length > 0 && (
+          <div className="mb-6">
+            <SocialTaskCompletion
+              raffleAddress={raffle.address}
+              tasks={socialTasks}
+              onTasksCompleted={handleTasksCompleted}
+            />
           </div>
+        )}
 
-          {maxPurchasable > 0 ? (
-            <>
-              <div>
-                <label className="block text-sm font-medium mb-2">Quantity</label>
-                <input
-                  type="number"
-                  min="1"
-                  max={maxPurchasable}
-                  value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, Math.min(maxPurchasable, parseInt(e.target.value) || 1)))}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Maximum: {maxPurchasable} tickets
-                </p>
-              </div>
-
-              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-md">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Total Cost:</span>
-                  <span className="text-lg font-bold">{totalCost} ETH</span>
-                </div>
-              </div>
-
-              {!canPurchaseTickets() && (
-                <div className="text-center py-2">
-                  <AlertCircle className="h-5 w-5 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    {isRaffleEnded() 
-                      ? 'Raffle has ended' 
-                      : 'Raffle has not started yet'}
-                  </p>
-                </div>
-              )}
-
-              {raffle.stateNum !== 1 ? (
-                <button
-                  onClick={handleActivateRaffle}
-                  disabled={!canActivate || activating || !raffle}
-                  className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white px-6 py-3 rounded-md hover:from-green-600 hover:to-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg mb-2"
-                >
-                  {activating ? 'Activating...' : 'Activate Raffle'}
-                </button>
-              ) : (
-                <button
-                  onClick={handlePurchase}
-                  disabled={loading || !connected || !canPurchaseTickets()}
-                  className="w-full bg-blue-600 dark:bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <Ticket className="h-4 w-4" />
-                  {loading ? 'Processing...' : `Purchase ${quantity} Ticket${quantity > 1 ? 's' : ''}`}
-                </button>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground">
-                You have reached the maximum number of tickets for this raffle.
-              </p>
-            </div>
-          )}
-
-          {!connected && (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground">
-                Please connect your wallet to purchase tickets.
-              </p>
-            </div>
-          )}
+        {/* Replace the grid in the purchase card with the new arrangement */}
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="text-muted-foreground">Ticket Price{usesCustomPrice === true ? ' (set by Creator)' : usesCustomPrice === false ? ' (Protocol Ticket Fee)' : ''}:</span>
+            <p className="font-semibold text-lg">{ethers.utils.formatEther(raffle.ticketPrice || '0')} ETH</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Remaining tickets:</span>
+            <p className="font-semibold text-lg">{remainingTickets}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Your tickets:</span>
+            <p className="font-semibold text-lg">{userTickets || 0}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Winning Chance:</span>
+            <p className="font-semibold text-lg">{winningChance !== null ? `${winningChance}%` : 'N/A'}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Max per user:</span>
+            <p className="font-semibold text-lg">{raffle.maxTicketsPerParticipant}</p>
+          </div>
+          <div></div>
         </div>
-      )}
+
+        {/* Button/message area */}
+        {raffle.stateNum === 2 && userTickets > 0 ? (
+          <>
+            <button
+              onClick={handleRequestRandomness}
+              disabled={requestingRandomness}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-md hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+            >
+              {requestingRandomness ? 'Requesting...' : 'Request Randomness'}
+            </button>
+            <p className="text-muted-foreground mt-4 text-center text-sm">
+              The raffle has ended. As a participant, you can request the randomness to initiate winner selection.
+            </p>
+          </>
+        ) : maxPurchasable <= 0 ? (
+          <button
+            disabled
+            className="w-full bg-gray-400 text-white px-6 py-3 rounded-md opacity-60 cursor-not-allowed flex items-center justify-center gap-2 text-lg"
+          >
+            Sold Out
+          </button>
+        ) : userTickets >= raffle.maxTicketsPerParticipant ? (
+          <button
+            disabled
+            className="w-full bg-gray-400 text-white px-6 py-3 rounded-md opacity-60 cursor-not-allowed flex items-center justify-center gap-2 text-lg"
+          >
+            Limit Reached
+          </button>
+        ) : (
+          <>
+            <div>
+              <label className="block text-sm font-medium mb-2">Quantity</label>
+              <input
+                type="number"
+                min="1"
+                max={maxPurchasable}
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, Math.min(maxPurchasable, parseInt(e.target.value) || 1)))}
+                className="w-full px-3 py-2 border border-border rounded-md bg-background"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Maximum: {maxPurchasable} tickets
+              </p>
+            </div>
+            <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-md">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Total Cost:</span>
+                <span className="text-lg font-bold">{totalCost} ETH</span>
+              </div>
+            </div>
+            <button
+              onClick={handlePurchase}
+              disabled={loading || !connected || !canPurchaseTickets()}
+              className="w-full bg-blue-600 dark:bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Ticket className="h-4 w-4" />
+              {loading ? 'Processing...' : `Purchase ${quantity} Ticket${quantity > 1 ? 's' : ''}`}
+            </button>
+          </>
+        )}
+
+        {!connected && (
+          <div className="text-center py-4">
+            <p className="text-muted-foreground">
+              Please connect your wallet to purchase tickets.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
