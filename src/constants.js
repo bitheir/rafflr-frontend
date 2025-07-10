@@ -1,8 +1,8 @@
 export const CONTRACT_ADDRESSES = {
-  raffleManager: "0xd65cda304A12e05E08fA8a815200AAE68C1aA5d3",
-  raffleDeployer: "0xFa68D57d9923f4Bb42331BC4508a82ec5eb4C425",
-  revenueManager: "0xF3895A25314B02ee0558F74A7D18f5E52A566898",
-  nftFactory: "0x76Be1a0b9aaDe4133a34789a949C781A90Ba96D9",
+  raffleManager: "0x58b108415bd1873271D027854E87F3218dD47Dd9",
+  raffleDeployer: "0x0c96e4707ef172Acbd9D3e0B45DA2DA6f08E1E46",
+  revenueManager: "0x1AC2562db5AECB54242aa9827f3d2B0904d68ec0",
+  nftFactory: "0x5accA6286Ac524938C76f7e24dE120C3D804028A",
   // Add other contract addresses as needed
 };
 

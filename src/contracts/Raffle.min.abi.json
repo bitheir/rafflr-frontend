@@ -43,6 +43,7 @@
   { "inputs": [], "name": "withdrawEscrowedPrize", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [], "name": "usesCustomPrice", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
   { "inputs": [{ "internalType": "address", "name": "", "type": "address" }], "name": "refundedNonWinningTickets", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+  { "inputs": [ { "internalType": "address", "name": "", "type": "address" } ], "name": "winsPerAddress", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" },
   {
     "inputs": [
       {
@@ -63,10 +64,24 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_prizeCollection",
+        "type": "address"
+      }
+    ],
+    "name": "setExternalPrize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "requestRandomWords",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
-  }
+  },
+  { "inputs": [], "name": "activate", "outputs": [], "stateMutability": "nonpayable", "type": "function" }
 ] 
