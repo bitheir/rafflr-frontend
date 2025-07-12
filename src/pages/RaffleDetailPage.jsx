@@ -329,6 +329,13 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
               The raffle has ended. {address?.toLowerCase() === raffle.creator.toLowerCase() ? 'As the creator' : 'As a participant'}, you can request the randomness to initiate winner selection.
             </p>
           </>
+        ) : (raffle.state === 'Completed' || raffle.stateNum === 4 || raffle.stateNum === 7) ? (
+          <button
+            disabled
+            className="w-full bg-gray-400 text-white px-6 py-3 rounded-md opacity-60 cursor-not-allowed flex items-center justify-center gap-2 text-lg"
+          >
+            Sold Out
+          </button>
         ) : isRaffleEnded() ? (
           <button
             onClick={handleEndRaffle}
@@ -387,45 +394,6 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
         {/* Mint/Claim/Refund buttons for completed raffles */}
         {(raffle.stateNum === 4 || raffle.stateNum === 7) && (
           <div className="flex flex-col gap-2 mt-6">
-            {/* Mint Prize (for creator, if eligible) */}
-            {isMintableERC721 && showMintInput !== undefined && setShowMintInput && mintWinnerAddress !== undefined && setMintWinnerAddress && mintingToWinner !== undefined && handleMintToWinner && (
-              <>
-                {!showMintInput ? (
-                  <Button
-                    onClick={() => setShowMintInput(true)}
-                    className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base"
-                  >
-                    Mint to Winner
-                  </Button>
-                ) : (
-                  <div className="flex flex-col sm:flex-row gap-2 items-center">
-                    <input
-                      type="text"
-                      placeholder="Enter winner address"
-                      value={mintWinnerAddress}
-                      onChange={e => setMintWinnerAddress(e.target.value)}
-                      className="px-3 py-2 border border-border rounded-md bg-background w-72 font-mono"
-                      disabled={mintingToWinner}
-                    />
-                    <Button
-                      onClick={handleMintToWinner}
-                      disabled={mintingToWinner || !mintWinnerAddress || mintWinnerAddress.length !== 42}
-                      className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50"
-                    >
-                      {mintingToWinner ? 'Minting...' : 'Submit'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowMintInput(false)}
-                      disabled={mintingToWinner}
-                      className="ml-2"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
             {/* Claim Prize */}
             {shouldShowClaimPrize && (
               <Button
