@@ -8,6 +8,16 @@ import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
 import { toast } from '../components/ui/sonner';
 
+// Utility to extract only the revert reason from contract errors
+function extractRevertReason(error) {
+  if (error?.reason) return error.reason;
+  if (error?.data?.message) return error.data.message;
+  const msg = error?.message || error?.data?.message || error?.toString() || '';
+  const match = msg.match(/execution reverted:?\s*([^\n]*)/i);
+  if (match && match[1]) return match[1].trim();
+  return msg;
+}
+
 const DeployERC1155CollectionPage = () => {
   const { connected } = useWallet();
   const { contracts, executeTransaction } = useContract();
@@ -72,7 +82,7 @@ const DeployERC1155CollectionPage = () => {
       }
     } catch (error) {
       console.error('Error deploying collection:', error);
-      toast.error('Error deploying collection: ' + error.message);
+      toast.error(extractRevertReason(error));
     } finally {
       setLoading(false);
     }
@@ -131,7 +141,7 @@ const DeployERC1155CollectionPage = () => {
       }));
     } catch (error) {
       console.error('Error minting tokens:', error);
-      toast.error('Error minting tokens: ' + error.message);
+      toast.error(extractRevertReason(error));
     } finally {
       setMintLoading(false);
     }

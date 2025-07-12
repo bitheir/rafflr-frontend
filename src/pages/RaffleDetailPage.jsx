@@ -24,7 +24,17 @@ const RAFFLE_STATE_LABELS = [
   'Unengaged'
 ];
 
-const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
+// Utility to extract only the revert reason from contract errors
+function extractRevertReason(error) {
+  if (error?.reason) return error.reason;
+  if (error?.data?.message) return error.data.message;
+  const msg = error?.message || error?.data?.message || error?.toString() || '';
+  const match = msg.match(/execution reverted:?\s*([^\n]*)/i);
+  if (match && match[1]) return match[1].trim();
+  return msg;
+}
+
+const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, shouldShowClaimPrize, prizeAlreadyClaimed, claimingPrize, handleClaimPrize, shouldShowClaimRefund, claimingRefund, handleClaimRefund, refundableAmount, isMintableERC721, showMintInput, setShowMintInput, mintWinnerAddress, setMintWinnerAddress, mintingToWinner, handleMintToWinner }) => {
   const { connected, address } = useWallet();
   const { getContractInstance, executeTransaction } = useContract();
   const [quantity, setQuantity] = useState(1);
@@ -157,7 +167,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
       await onPurchase(quantity);
     } catch (error) {
       console.error('Purchase failed:', error);
-      toast.error('Purchase failed: ' + error.message);
+      toast.error(extractRevertReason(error));
     } finally {
       setLoading(false);
     }
@@ -175,7 +185,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
         throw new Error(result.error);
       }
     } catch (err) {
-      toast.error('Activate Raffle failed: ' + err.message);
+      toast.error(extractRevertReason(err));
     } finally {
       setActivating(false);
     }
@@ -194,7 +204,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
         throw new Error(result.error);
       }
     } catch (error) {
-      toast.error('Failed to request randomness: ' + error.message);
+      toast.error(extractRevertReason(error));
     } finally {
       setRequestingRandomness(false);
     }
@@ -213,7 +223,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
         throw new Error(result.error);
       }
     } catch (err) {
-      toast.error('End Raffle failed: ' + err.message);
+      toast.error(extractRevertReason(err));
     } finally {
       setEndingRaffle(false);
     }
@@ -225,8 +235,15 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
   };
 
   const isRaffleEnded = () => {
-    // Raffle is ended if state is ended/completed/drawing or timer shows "Ended"
-    return raffle.state === 'ended' || 
+    const now = Math.floor(Date.now() / 1000);
+    const raffleEndTime = raffle.startTime + raffle.duration;
+    
+    // Raffle is ended if:
+    // 1. Raffle is in 'active' state AND current time has passed the raffle's end time, OR
+    // 2. Contract state is ended/completed/drawing, OR
+    // 3. Timer shows "Ended"
+    return (raffle.state === 'active' && now >= raffleEndTime) ||
+           raffle.state === 'ended' || 
            raffle.state === 'completed' || 
            raffle.state === 'drawing' || 
            timeRemaining === 'Ended';
@@ -366,6 +383,72 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
               </button>
             </>
           )}
+
+        {/* Mint/Claim/Refund buttons for completed raffles */}
+        {(raffle.stateNum === 4 || raffle.stateNum === 7) && (
+          <div className="flex flex-col gap-2 mt-6">
+            {/* Mint Prize (for creator, if eligible) */}
+            {isMintableERC721 && showMintInput !== undefined && setShowMintInput && mintWinnerAddress !== undefined && setMintWinnerAddress && mintingToWinner !== undefined && handleMintToWinner && (
+              <>
+                {!showMintInput ? (
+                  <Button
+                    onClick={() => setShowMintInput(true)}
+                    className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base"
+                  >
+                    Mint to Winner
+                  </Button>
+                ) : (
+                  <div className="flex flex-col sm:flex-row gap-2 items-center">
+                    <input
+                      type="text"
+                      placeholder="Enter winner address"
+                      value={mintWinnerAddress}
+                      onChange={e => setMintWinnerAddress(e.target.value)}
+                      className="px-3 py-2 border border-border rounded-md bg-background w-72 font-mono"
+                      disabled={mintingToWinner}
+                    />
+                    <Button
+                      onClick={handleMintToWinner}
+                      disabled={mintingToWinner || !mintWinnerAddress || mintWinnerAddress.length !== 42}
+                      className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50"
+                    >
+                      {mintingToWinner ? 'Minting...' : 'Submit'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowMintInput(false)}
+                      disabled={mintingToWinner}
+                      className="ml-2"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+            {/* Claim Prize */}
+            {shouldShowClaimPrize && (
+              <Button
+                onClick={handleClaimPrize}
+                disabled={claimingPrize || prizeAlreadyClaimed}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {claimingPrize ? 'Claiming...' : prizeAlreadyClaimed ? 'Prize Claimed' : (isMintableERC721 ? 'Mint Prize' : 'Claim Prize')}
+              </Button>
+            )}
+            {/* Claim Refund */}
+            {shouldShowClaimRefund && (
+              <Button
+                onClick={handleClaimRefund}
+                disabled={claimingRefund}
+                className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-6 py-2 rounded-lg hover:from-green-600 hover:to-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <DollarSign className="h-4 w-4" />
+                {claimingRefund ? 'Claiming...' : `Claim Refund${refundableAmount && refundableAmount.gt && refundableAmount.gt(0) ? ` (${ethers.utils.formatEther(refundableAmount)} ETH)` : ''}`}
+              </Button>
+            )}
+          </div>
+        )}
 
           {!connected && (
             <div className="text-center py-4">
@@ -625,7 +708,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
       }
     } catch (error) {
       console.error('Error claiming prize:', error);
-      toast.error('Failed to claim prize: ' + error.message);
+      toast.error(extractRevertReason(error));
     } finally {
       setClaimingPrize(false);
     }
@@ -651,7 +734,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
       }
     } catch (error) {
       console.error('Error claiming refund:', error);
-      toast.error('Failed to claim refund: ' + error.message);
+      toast.error(extractRevertReason(error));
     } finally {
       setClaimingRefund(false);
     }
@@ -883,27 +966,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
     <Card className="bg-background">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-xl">Winners</CardTitle>
-        <div className="flex gap-2">
-          {shouldShowClaimPrize && (
-            <Button
-              onClick={handleClaimPrize}
-              disabled={claimingPrize || prizeAlreadyClaimed}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {claimingPrize ? 'Claiming...' : prizeAlreadyClaimed ? 'Prize Claimed' : (isMintableERC721 ? 'Mint Prize' : 'Claim Prize')}
-            </Button>
-          )}
-          {shouldShowClaimRefund && (
-            <Button
-              onClick={handleClaimRefund}
-              disabled={claimingRefund}
-              className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-6 py-2 rounded-lg hover:from-green-600 hover:to-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              <DollarSign className="h-4 w-4" />
-              {claimingRefund ? 'Claiming...' : `Claim Refund${refundableAmount && refundableAmount.gt && refundableAmount.gt(0) ? ` (${ethers.utils.formatEther(refundableAmount)} ETH)` : ''}`}
-            </Button>
-          )}
-        </div>
+        <div className="flex gap-2"></div>
       </CardHeader>
       <CardContent className="overflow-y-auto p-2">
         {getStateDisplay()}
@@ -1014,7 +1077,7 @@ const RaffleDetailPage = () => {
         throw new Error(result.error);
       }
     } catch (err) {
-      toast.error('mintToWinner failed: ' + err.message);
+      toast.error(extractRevertReason(err));
     } finally {
       setMintingToWinner(false);
     }
@@ -1038,7 +1101,7 @@ const RaffleDetailPage = () => {
         throw new Error(result.error);
       }
     } catch (err) {
-      toast.error('Assign Prize failed: ' + err.message);
+      toast.error(extractRevertReason(err));
     } finally {
       setAssigningPrize(false);
     }
@@ -1158,7 +1221,7 @@ const RaffleDetailPage = () => {
         setRaffle(raffleData);
       } catch (error) {
         console.error('Error fetching raffle data:', error);
-        toast.error('Error loading raffle data: ' + error.message);
+        toast.error(extractRevertReason(error));
         // Navigate back if raffle doesn't exist
         navigate('/');
       } finally {
@@ -1289,7 +1352,7 @@ const RaffleDetailPage = () => {
       setIs1155Approved(true);
       toast.success('Approval successful! You can now deposit the prize.');
     } catch (e) {
-      toast.error('Approval failed: ' + (e?.reason || e?.message || e));
+      toast.error(extractRevertReason(e));
     } finally {
       setApproving(false);
     }
@@ -1345,7 +1408,7 @@ const RaffleDetailPage = () => {
       setIsERC20Approved(true);
       toast.success('ERC20 approval successful! You can now deposit the prize.');
     } catch (e) {
-      toast.error('ERC20 approval failed: ' + (e?.reason || e?.message || e));
+      toast.error(extractRevertReason(e));
     } finally {
       setApprovingERC20(false);
     }
@@ -1407,7 +1470,7 @@ const RaffleDetailPage = () => {
       setIsERC721Approved(true);
       toast.success('ERC721 approval successful! You can now deposit the prize.');
     } catch (e) {
-      toast.error('ERC721 approval failed: ' + (e?.reason || e?.message || e));
+      toast.error(extractRevertReason(e));
     } finally {
       setApprovingERC721(false);
     }
@@ -1458,7 +1521,7 @@ const RaffleDetailPage = () => {
         navigate('/');
     } catch (error) {
       console.error('Error deleting raffle:', error);
-      toast.error('Failed to delete raffle: ' + error.message);
+      toast.error(extractRevertReason(error));
     } finally {
       setDeletingRaffle(false);
     }
@@ -1497,7 +1560,7 @@ const RaffleDetailPage = () => {
       await tx.wait();
       toast.success('Prize withdrawn successfully!');
     } catch (e) {
-      toast.error('Withdraw failed: ' + (e?.reason || e?.message || e));
+      toast.error(extractRevertReason(e));
     } finally {
       setWithdrawingPrize(false);
     }
@@ -1518,6 +1581,165 @@ const RaffleDetailPage = () => {
   // ... at the top of RaffleDetailPage, after other useState hooks ...
   const [timeLabel, setTimeLabel] = useState('');
   const [timeValue, setTimeValue] = useState('');
+
+  // 1. Move winner/refund state and logic to RaffleDetailPage
+  // (Insert after other useState hooks in RaffleDetailPage)
+  const [winners, setWinners] = useState([]);
+  const [loadingWinners, setLoadingWinners] = useState(false);
+  const [claimingPrize, setClaimingPrize] = useState(false);
+  const [claimingRefund, setClaimingRefund] = useState(false);
+  const [isWinner, setIsWinner] = useState(false);
+  const [eligibleForRefund, setEligibleForRefund] = useState(false);
+  const [refundClaimed, setRefundClaimed] = useState(false);
+  const [refundableAmount, setRefundableAmount] = useState(null);
+  const [nonWinningTickets, setNonWinningTickets] = useState(0);
+
+  // Winner/refund logic for rendering
+  const winnerObj = winners.find(w => w.address.toLowerCase() === address?.toLowerCase());
+  const shouldShowClaimPrize = !!winnerObj && raffle?.isPrized && (raffle?.stateNum === 4 || raffle?.stateNum === 7);
+  const prizeAlreadyClaimed = winnerObj && winnerObj.prizeClaimed;
+  const shouldShowClaimRefund =
+    raffle?.isPrized &&
+    (raffle?.stateNum === 4 || raffle?.stateNum === 7) &&
+    eligibleForRefund &&
+    refundableAmount && refundableAmount.gt && refundableAmount.gt(0);
+
+  useEffect(() => {
+    async function fetchWinners() {
+      if (!raffle || (raffle.stateNum !== 4 && raffle.stateNum !== 7)) {
+        setWinners([]);
+        setIsWinner(false);
+        setEligibleForRefund(false);
+        setRefundClaimed(false);
+        setRefundableAmount(null);
+        setNonWinningTickets(0);
+        return;
+      }
+      setLoadingWinners(true);
+      try {
+        const raffleContract = getContractInstance && getContractInstance(raffle.address, 'raffle');
+        if (!raffleContract) {
+          setWinners([]);
+          setLoadingWinners(false);
+          return;
+        }
+        const winnersCount = await raffleContract.winnersCount();
+        const count = winnersCount.toNumber ? winnersCount.toNumber() : Number(winnersCount);
+        if (count === 0) {
+          setWinners([]);
+          setLoadingWinners(false);
+          return;
+        }
+        const winnersArray = [];
+        for (let i = 0; i < count; i++) {
+          try {
+            const winnerAddress = await raffleContract.winners(i);
+            if (winnerAddress === ethers.constants.AddressZero || winnerAddress === '0x0000000000000000000000000000000000000000') {
+              continue;
+            }
+            const claimedWins = await raffleContract.claimedWins(winnerAddress);
+            const prizeClaimed = await raffleContract.prizeClaimed(winnerAddress);
+            winnersArray.push({
+              address: winnerAddress,
+              index: i,
+              claimedWins: claimedWins.toNumber ? claimedWins.toNumber() : Number(claimedWins),
+              prizeClaimed: prizeClaimed
+            });
+          } catch (error) {
+            continue;
+          }
+        }
+        setWinners(winnersArray);
+        const winner = winnersArray.find(w => w.address.toLowerCase() === address?.toLowerCase());
+        setIsWinner(!!winner);
+        if (address && raffle.isPrized) {
+          try {
+            const refundable = await raffleContract.getRefundableAmount(address);
+            setRefundableAmount(refundable);
+            setEligibleForRefund(refundable && refundable.gt && refundable.gt(0));
+          } catch (e) {
+            setRefundableAmount(null);
+            setEligibleForRefund(false);
+          }
+        }
+        setNonWinningTickets(0);
+      } catch (error) {
+        setWinners([]);
+        setIsWinner(false);
+        setEligibleForRefund(false);
+        setRefundClaimed(false);
+        setRefundableAmount(null);
+        setNonWinningTickets(0);
+      } finally {
+        setLoadingWinners(false);
+      }
+    }
+    fetchWinners();
+  }, [raffle, getContractInstance, address]);
+
+  const handleClaimPrize = async () => {
+    if (!address || !raffle || !getContractInstance) {
+      toast.error('Please connect your wallet to claim your prize');
+      return;
+    }
+    const isWinner = winners.some(winner => winner.address.toLowerCase() === address.toLowerCase());
+    if (!isWinner) {
+      toast.error('You are not a winner of this raffle');
+      return;
+    }
+    const winner = winners.find(w => winner.address.toLowerCase() === address.toLowerCase());
+    if (winner && winner.prizeClaimed) {
+      toast.error('You have already claimed your prize');
+      return;
+    }
+    setClaimingPrize(true);
+    try {
+      const raffleContract = getContractInstance(raffle.address, 'raffle');
+      if (!raffleContract) throw new Error('Failed to get raffle contract');
+      const result = await executeTransaction(raffleContract.claimPrize);
+      if (result.success) {
+        let prizeType = 'prize';
+        if (raffle.ethPrizeAmount && raffle.ethPrizeAmount.gt && raffle.ethPrizeAmount.gt(0)) {
+          prizeType = `${ethers.utils.formatEther(raffle.ethPrizeAmount)} ETH`;
+        } else if (raffle.erc20PrizeToken && raffle.erc20PrizeToken !== ethers.constants.AddressZero && raffle.erc20PrizeAmount && raffle.erc20PrizeAmount.gt && raffle.erc20PrizeAmount.gt(0)) {
+          prizeType = `${ethers.utils.formatUnits(raffle.erc20PrizeAmount, 18)} ERC20 tokens`;
+        } else if (raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero) {
+          prizeType = raffle.standard === 0 ? 'ERC721 NFT' : 'ERC1155 NFT';
+        }
+        toast.success(`Successfully claimed your ${prizeType}!`);
+        window.location.reload();
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      toast.error(extractRevertReason(error));
+    } finally {
+      setClaimingPrize(false);
+    }
+  };
+
+  const handleClaimRefund = async () => {
+    if (!address || !raffle || !getContractInstance) {
+      toast.error('Please connect your wallet to claim your refund');
+      return;
+    }
+    setClaimingRefund(true);
+    try {
+      const raffleContract = getContractInstance(raffle.address, 'raffle');
+      if (!raffleContract) throw new Error('Failed to get raffle contract');
+      const result = await executeTransaction(raffleContract.claimRefund);
+      if (result.success) {
+        toast.success('Successfully claimed your refund!');
+        window.location.reload();
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      toast.error(extractRevertReason(error));
+    } finally {
+      setClaimingRefund(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -1763,7 +1985,27 @@ const RaffleDetailPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
         {/* Left Half - Raffle Engagement */}
         <div className="space-y-6 h-full">
-          <TicketPurchaseSection raffle={raffle} onPurchase={handlePurchaseTickets} timeRemaining={timeRemaining} />
+          <TicketPurchaseSection
+            raffle={raffle}
+            onPurchase={handlePurchaseTickets}
+            timeRemaining={timeRemaining}
+            winners={winners}
+            shouldShowClaimPrize={shouldShowClaimPrize}
+            prizeAlreadyClaimed={prizeAlreadyClaimed}
+            claimingPrize={claimingPrize}
+            handleClaimPrize={handleClaimPrize}
+            shouldShowClaimRefund={shouldShowClaimRefund}
+            claimingRefund={claimingRefund}
+            handleClaimRefund={handleClaimRefund}
+            refundableAmount={refundableAmount}
+            isMintableERC721={isMintableERC721}
+            showMintInput={showMintInput}
+            setShowMintInput={setShowMintInput}
+            mintWinnerAddress={mintWinnerAddress}
+            setMintWinnerAddress={setMintWinnerAddress}
+            mintingToWinner={mintingToWinner}
+            handleMintToWinner={handleMintToWinner}
+          />
           
           {/* Additional Raffle Details */}
           <div className="bg-background border border-border rounded-lg p-6">

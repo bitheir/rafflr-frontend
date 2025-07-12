@@ -251,7 +251,7 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
                   throw new Error(result.error);
                 }
               } catch (err) {
-                toast.error('mintToWinner failed: ' + err.message);
+                toast.error(extractRevertReason(err));
               }
             }}
             className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base"
@@ -370,6 +370,16 @@ const ProfilePage = () => {
     totalRevenueWithdrawn: '0',
     totalRefundsClaimed: 0
   });
+
+  // Utility to extract only the revert reason from contract errors
+  function extractRevertReason(error) {
+    if (error?.reason) return error.reason;
+    if (error?.data?.message) return error.data.message;
+    const msg = error?.message || error?.data?.message || error?.toString() || '';
+    const match = msg.match(/execution reverted:?\s*([^\n]*)/i);
+    if (match && match[1]) return match[1].trim();
+    return msg;
+  }
 
   // Fetch on-chain activity
   const fetchOnChainActivity = async () => {
@@ -908,7 +918,7 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error('Error deleting raffle:', error);
-      toast.error('Error deleting raffle: ' + error.message);
+      toast.error(extractRevertReason(error));
     }
   };
 
@@ -948,7 +958,7 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error('Error claiming prize:', error);
-      toast.error('Error claiming prize: ' + error.message);
+      toast.error(extractRevertReason(error));
     }
   };
 
@@ -979,7 +989,7 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error('Error claiming refund:', error);
-      toast.error('Error claiming refund: ' + error.message);
+      toast.error(extractRevertReason(error));
     }
   };
 
