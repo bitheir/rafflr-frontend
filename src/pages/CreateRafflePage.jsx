@@ -97,19 +97,19 @@ function ERC1155DropForm() {
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
-      toast.success('ERC1155 Collection raffle created successfully!');
-      setFormData({
-        name: '',
-        collectionAddress: '',
-        tokenId: '',
-        unitsPerWinner: '',
-        startTime: '',
-        duration: '',
-        ticketLimit: '',
-        winnersCount: '',
-        maxTicketsPerParticipant: '',
-        ticketPrice: '',
-      });
+        toast.success('ERC1155 Collection raffle created successfully!');
+        setFormData({
+          name: '',
+          collectionAddress: '',
+          tokenId: '',
+          unitsPerWinner: '',
+          startTime: '',
+          duration: '',
+          ticketLimit: '',
+          winnersCount: '',
+          maxTicketsPerParticipant: '',
+          ticketPrice: '',
+        });
     } catch (error) {
       console.error('Error creating raffle:', error);
       toast.error(extractRevertReason(error));
@@ -1830,7 +1830,7 @@ const CreateRafflePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8 max-w-7xl mx-auto mt-16">
           <div className="lg:col-span-1 flex flex-col gap-6 items-start">
             <div className="w-full max-w-[420px]">
-              {renderFilterCard()}
+            {renderFilterCard()}
             </div>
             {raffleType === 'NFTDrop' && nftStandard === 'ERC1155' && (
               <Link
@@ -1934,18 +1934,18 @@ function LuckySaleERC721Form() {
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
-      toast.success('Lucky Sale ERC721 raffle created successfully!');
-      setFormData({
-        name: '',
-        collectionAddress: '',
-        tokenId: '',
-        startTime: '',
-        duration: '',
-        ticketLimit: '',
-        winnersCount: '',
-        maxTicketsPerParticipant: '',
-        ticketPrice: '',
-      });
+        toast.success('Lucky Sale ERC721 raffle created successfully!');
+        setFormData({
+          name: '',
+          collectionAddress: '',
+          tokenId: '',
+          startTime: '',
+          duration: '',
+          ticketLimit: '',
+          winnersCount: '',
+          maxTicketsPerParticipant: '',
+          ticketPrice: '',
+        });
     } catch (error) {
       console.error('Error creating raffle:', error);
       toast.error(extractRevertReason(error));
@@ -2185,19 +2185,19 @@ function LuckySaleERC1155Form() {
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
-      toast.success('Lucky Sale ERC1155 raffle created successfully!');
-      setFormData({
-        name: '',
-        collectionAddress: '',
-        tokenId: '',
-        unitsPerWinner: '',
-        startTime: '',
-        duration: '',
-        ticketLimit: '',
-        winnersCount: '',
-        maxTicketsPerParticipant: '',
-        ticketPrice: '',
-      });
+        toast.success('Lucky Sale ERC1155 raffle created successfully!');
+        setFormData({
+          name: '',
+          collectionAddress: '',
+          tokenId: '',
+          unitsPerWinner: '',
+          startTime: '',
+          duration: '',
+          ticketLimit: '',
+          winnersCount: '',
+          maxTicketsPerParticipant: '',
+          ticketPrice: '',
+        });
     } catch (error) {
       console.error('Error creating raffle:', error);
       toast.error(extractRevertReason(error));
@@ -2675,18 +2675,18 @@ function ERC20GiveawayForm() {
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
-      toast.success('ERC20 Giveaway raffle created successfully!');
-      setFormData({
-        name: '',
-        tokenAddress: '',
-        tokenAmount: '',
-        startTime: '',
-        duration: '',
-        ticketLimit: '',
-        winnersCount: '',
-        maxTicketsPerParticipant: ''
-      });
-      setSocialTasks([]);
+        toast.success('ERC20 Giveaway raffle created successfully!');
+        setFormData({
+          name: '',
+          tokenAddress: '',
+          tokenAmount: '',
+          startTime: '',
+          duration: '',
+          ticketLimit: '',
+          winnersCount: '',
+          maxTicketsPerParticipant: ''
+        });
+        setSocialTasks([]);
     } catch (error) {
       console.error('Error creating raffle:', error);
       toast.error(extractRevertReason(error));

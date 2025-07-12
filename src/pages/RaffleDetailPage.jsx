@@ -239,13 +239,13 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
     const raffleEndTime = raffle.startTime + raffle.duration;
     
     // Raffle is ended if:
-    // 1. Raffle is in 'active' state AND current time has passed the raffle's end time, OR
-    // 2. Contract state is ended/completed/drawing, OR
+    // 1. Raffle is in 'Active' state AND current time has passed the raffle's end time, OR
+    // 2. Contract state is Ended/Completed/Drawing, OR
     // 3. Timer shows "Ended"
-    return (raffle.state === 'active' && now >= raffleEndTime) ||
-           raffle.state === 'ended' || 
-           raffle.state === 'completed' || 
-           raffle.state === 'drawing' || 
+    return (raffle.state === 'Active' && now >= raffleEndTime) ||
+           raffle.state === 'Ended' || 
+           raffle.state === 'Completed' || 
+           raffle.state === 'Drawing' || 
            timeRemaining === 'Ended';
   };
 
@@ -316,7 +316,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
           >
             {activating ? 'Activating...' : 'Activate Raffle'}
           </button>
-        ) : raffle.stateNum === 2 && userTickets > 0 ? (
+        ) : raffle.stateNum === 2 && (address?.toLowerCase() === raffle.creator.toLowerCase() || userTickets > 0) ? (
           <>
             <button
               onClick={handleRequestRandomness}
@@ -326,14 +326,14 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
               {requestingRandomness ? 'Requesting...' : 'Request Randomness'}
             </button>
             <p className="text-muted-foreground mt-4 text-center text-sm">
-              The raffle has ended. As a participant, you can request the randomness to initiate winner selection.
+              The raffle has ended. {address?.toLowerCase() === raffle.creator.toLowerCase() ? 'As the creator' : 'As a participant'}, you can request the randomness to initiate winner selection.
             </p>
           </>
         ) : isRaffleEnded() ? (
           <button
             onClick={handleEndRaffle}
             disabled={endingRaffle}
-            className="w-full bg-gradient-to-r from-yellow-500 to-yellow-700 text-white px-6 py-3 rounded-md hover:from-yellow-600 hover:to-yellow-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+            className="w-full bg-gradient-to-r from-red-500 to-red-700 text-white px-6 py-3 rounded-md hover:from-red-600 hover:to-red-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
           >
             {endingRaffle ? 'Ending...' : 'End Raffle'}
           </button>
@@ -1506,6 +1506,19 @@ const RaffleDetailPage = () => {
   const handleDeleteRaffle = async () => {
     if (!raffle || !getContractInstance) return;
     
+    // Debug logging
+    console.log('Attempting to delete raffle:', {
+      address: raffle.address,
+      state: raffle.state,
+      stateNum: raffle.stateNum,
+      creator: raffle.creator,
+      userAddress: address,
+      isCreator: address?.toLowerCase() === raffle.creator.toLowerCase(),
+      prizeCollection: raffle.prizeCollection,
+      usesCustomPrice: raffle.usesCustomPrice,
+      canDelete: canDelete()
+    });
+    
     setDeletingRaffle(true);
     try {
       const raffleContract = getContractInstance(raffle.address, 'raffle');
@@ -1529,9 +1542,18 @@ const RaffleDetailPage = () => {
 
   const canDelete = () => {
     // Can delete if user is the creator and raffle is in pending or active state
-    return connected && 
-           address?.toLowerCase() === raffle?.creator.toLowerCase() && 
-           (raffle?.state === 'pending' || raffle?.state === 'active');
+    // For raffles with prizes and custom pricing, additional conditions apply
+    const basicConditions = connected && 
+                           address?.toLowerCase() === raffle?.creator.toLowerCase() && 
+                           (raffle?.state === 'Pending' || raffle?.state === 'Active');
+    
+    // If raffle has a prize collection and uses custom pricing, check those conditions
+    if (raffle?.prizeCollection && raffle?.prizeCollection !== ethers.constants.AddressZero && raffle?.usesCustomPrice) {
+      return basicConditions && raffle?.prizeCollection && raffle?.prizeCollection !== ethers.constants.AddressZero && raffle?.usesCustomPrice;
+    }
+    
+    // For other raffle types (non-prized, ETH prizes, etc.), only check basic conditions
+    return basicConditions;
   };
 
   const getStatusBadge = () => {
@@ -1801,12 +1823,7 @@ const RaffleDetailPage = () => {
           </div>
           <div className="flex items-center gap-3">
             {getStatusBadge()}
-            {connected &&
-              address?.toLowerCase() === raffle.creator.toLowerCase() &&
-              (raffle.stateNum === 0 || raffle.stateNum === 1) &&
-              raffle.prizeCollection &&
-              raffle.prizeCollection !== ethers.constants.AddressZero &&
-              raffle.usesCustomPrice && (
+            {canDelete() && (
                 <Button
                 onClick={handleDeleteRaffle}
                 className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-pink-600 text-white px-4 py-2 rounded-md hover:from-red-600 hover:to-pink-700 transition-colors text-sm font-medium"
