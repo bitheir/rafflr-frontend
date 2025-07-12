@@ -7,10 +7,11 @@ import { ethers } from 'ethers';
 import RoyaltyAdjustmentComponent from '../components/RoyaltyAdjustmentComponent';
 import CreatorRevenueWithdrawalComponent from '../components/CreatorRevenueWithdrawalComponent';
 import MinterApprovalComponent from '../components/MinterApprovalComponent';
-import { CONTRACT_ADDRESSES } from '../constants';
+import { SUPPORTED_NETWORKS } from '../networks';
 import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
 import ProfileTabs from '../components/ProfileTabs';
+import { toast } from '../components/ui/sonner';
 
 function mapRaffleState(stateNum) {
   switch (stateNum) {
@@ -244,13 +245,13 @@ const CreatedRaffleCard = ({ raffle, onDelete, onViewRevenue }) => {
                 if (!raffleContract) throw new Error('Failed to get raffle contract');
                 const result = await executeTransaction(raffleContract.mintToWinner);
                 if (result.success) {
-                  alert('mintToWinner() executed successfully!');
+                  toast.success('mintToWinner() executed successfully!');
                   window.location.reload();
                 } else {
                   throw new Error(result.error);
                 }
               } catch (err) {
-                alert('mintToWinner failed: ' + err.message);
+                toast.error('mintToWinner failed: ' + err.message);
               }
             }}
             className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base"
@@ -351,7 +352,7 @@ const PurchasedTicketsCard = ({ ticket, onClaimPrize, onClaimRefund }) => {
 };
 
 const ProfilePage = () => {
-  const { connected, address, provider } = useWallet();
+  const { connected, address, provider, chainId } = useWallet();
   const { contracts, getContractInstance, executeTransaction, executeCall } = useContract();
   const navigate = useNavigate();
   
@@ -893,7 +894,7 @@ const ProfilePage = () => {
         const successMessage = raffle.ticketsSold > 0 
           ? `Raffle deleted successfully! Refunds have been processed automatically for ${raffle.ticketsSold} sold tickets.`
           : 'Raffle deleted successfully!';
-        alert(successMessage);
+        toast.success(successMessage);
         // Refresh data after deletion
         setLoading(true);
         await Promise.all([
@@ -907,7 +908,7 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error('Error deleting raffle:', error);
-      alert('Error deleting raffle: ' + error.message);
+      toast.error('Error deleting raffle: ' + error.message);
     }
   };
 
@@ -933,7 +934,7 @@ const ProfilePage = () => {
       }
       
       if (result.success) {
-        alert('Prize claimed successfully!');
+        toast.success('Prize claimed successfully!');
         // Refresh data after claiming
         setLoading(true);
         await Promise.all([
@@ -947,7 +948,7 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error('Error claiming prize:', error);
-      alert('Error claiming prize: ' + error.message);
+      toast.error('Error claiming prize: ' + error.message);
     }
   };
 
@@ -964,7 +965,7 @@ const ProfilePage = () => {
       const result = await executeTransaction(raffleContract.claimRefund);
       
       if (result.success) {
-        alert('Refund claimed successfully!');
+        toast.success('Refund claimed successfully!');
         // Refresh data after claiming
         setLoading(true);
         await Promise.all([
@@ -978,7 +979,7 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error('Error claiming refund:', error);
-      alert('Error claiming refund: ' + error.message);
+      toast.error('Error claiming refund: ' + error.message);
     }
   };
 

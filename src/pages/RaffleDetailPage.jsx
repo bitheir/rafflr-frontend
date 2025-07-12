@@ -10,6 +10,7 @@ import { PageContainer } from '../components/Layout';
 import SocialTaskCompletion from '../components/SocialTaskCompletion';
 import { SocialTaskService } from '../lib/socialTaskService';
 import { contractABIs } from '../contracts/contractABIs';
+import { toast } from '../components/ui/sonner';
 
 const RAFFLE_STATE_LABELS = [
   'Pending',
@@ -39,6 +40,8 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
   const [activating, setActivating] = useState(false);
   // 1. Add usesCustomPrice state to TicketPurchaseSection
   const [usesCustomPrice, setUsesCustomPrice] = useState(null);
+  // Add state for ending raffle
+  const [endingRaffle, setEndingRaffle] = useState(false);
 
   useEffect(() => {
     loadSocialTasks();
@@ -140,12 +143,12 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
 
   const handlePurchase = async () => {
     if (!connected) {
-      alert('Please connect your wallet first');
+      toast.error('Please connect your wallet first');
       return;
     }
 
     if (!tasksCompleted) {
-      alert('Please complete all required social media tasks before purchasing tickets');
+      toast.error('Please complete all required social media tasks before purchasing tickets');
       return;
     }
 
@@ -154,7 +157,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
       await onPurchase(quantity);
     } catch (error) {
       console.error('Purchase failed:', error);
-      alert('Purchase failed: ' + error.message);
+      toast.error('Purchase failed: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -166,13 +169,13 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
       if (!raffleContract) throw new Error('Failed to get raffle contract');
       const result = await executeTransaction(raffleContract.activate);
       if (result.success) {
-        alert('Raffle activated successfully!');
+        toast.success('Raffle activated successfully!');
         window.location.reload();
       } else {
         throw new Error(result.error);
       }
     } catch (err) {
-      alert('Activate Raffle failed: ' + err.message);
+      toast.error('Activate Raffle failed: ' + err.message);
     } finally {
       setActivating(false);
     }
@@ -185,15 +188,34 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
       if (!raffleContract) throw new Error('Failed to get raffle contract');
       const result = await executeTransaction(raffleContract.requestRandomWords);
       if (result.success) {
-        alert('Randomness requested successfully!');
+        toast.success('Randomness requested successfully!');
         window.location.reload();
       } else {
         throw new Error(result.error);
       }
     } catch (error) {
-      alert('Failed to request randomness: ' + error.message);
+      toast.error('Failed to request randomness: ' + error.message);
     } finally {
       setRequestingRandomness(false);
+    }
+  };
+
+  const handleEndRaffle = async () => {
+    setEndingRaffle(true);
+    try {
+      const raffleContract = getContractInstance(raffle.address, 'raffle');
+      if (!raffleContract) throw new Error('Failed to get raffle contract');
+      const result = await executeTransaction(raffleContract.endRaffle);
+      if (result.success) {
+        toast.success('Raffle ended successfully!');
+        window.location.reload();
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (err) {
+      toast.error('End Raffle failed: ' + err.message);
+    } finally {
+      setEndingRaffle(false);
     }
   };
 
@@ -269,7 +291,15 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
           </div>
 
         {/* Button/message area */}
-        {raffle.stateNum === 2 && userTickets > 0 ? (
+        {raffle.state?.toLowerCase() === 'pending' && canActivate ? (
+          <button
+            onClick={handleActivateRaffle}
+            disabled={activating}
+            className="w-full bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-3 rounded-md hover:from-green-600 hover:to-green-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+          >
+            {activating ? 'Activating...' : 'Activate Raffle'}
+          </button>
+        ) : raffle.stateNum === 2 && userTickets > 0 ? (
           <>
             <button
               onClick={handleRequestRandomness}
@@ -282,6 +312,14 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining }) => {
               The raffle has ended. As a participant, you can request the randomness to initiate winner selection.
             </p>
           </>
+        ) : isRaffleEnded() ? (
+          <button
+            onClick={handleEndRaffle}
+            disabled={endingRaffle}
+            className="w-full bg-gradient-to-r from-yellow-500 to-yellow-700 text-white px-6 py-3 rounded-md hover:from-yellow-600 hover:to-yellow-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+          >
+            {endingRaffle ? 'Ending...' : 'End Raffle'}
+          </button>
         ) : maxPurchasable <= 0 ? (
           <button
             disabled
@@ -532,7 +570,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
 
   const handleClaimPrize = async () => {
     if (!connectedAddress || !raffle || !getContractInstance) {
-      alert('Please connect your wallet to claim your prize');
+      toast.error('Please connect your wallet to claim your prize');
       return;
     }
 
@@ -542,7 +580,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
     );
 
     if (!isWinner) {
-      alert('You are not a winner of this raffle');
+      toast.error('You are not a winner of this raffle');
       return;
     }
 
@@ -552,7 +590,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
     );
 
     if (winner && winner.prizeClaimed) {
-      alert('You have already claimed your prize');
+      toast.error('You have already claimed your prize');
       return;
     }
 
@@ -579,7 +617,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
           prizeType = raffle.standard === 0 ? 'ERC721 NFT' : 'ERC1155 NFT';
         }
 
-        alert(`Successfully claimed your ${prizeType}!`);
+        toast.success(`Successfully claimed your ${prizeType}!`);
         // Refresh the page to update the UI
         window.location.reload();
       } else {
@@ -587,7 +625,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
       }
     } catch (error) {
       console.error('Error claiming prize:', error);
-      alert('Failed to claim prize: ' + error.message);
+      toast.error('Failed to claim prize: ' + error.message);
     } finally {
       setClaimingPrize(false);
     }
@@ -595,7 +633,7 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
 
   const handleClaimRefund = async () => {
     if (!connectedAddress || !raffle || !getContractInstance) {
-      alert('Please connect your wallet to claim your refund');
+      toast.error('Please connect your wallet to claim your refund');
       return;
     }
     setClaimingRefund(true);
@@ -606,14 +644,14 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
       }
       const result = await executeTransaction(raffleContract.claimRefund);
       if (result.success) {
-        alert('Successfully claimed your refund!');
+        toast.success('Successfully claimed your refund!');
         window.location.reload();
       } else {
         throw new Error(result.error);
       }
     } catch (error) {
       console.error('Error claiming refund:', error);
-      alert('Failed to claim refund: ' + error.message);
+      toast.error('Failed to claim refund: ' + error.message);
     } finally {
       setClaimingRefund(false);
     }
@@ -944,7 +982,6 @@ const RaffleDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState('');
   const [isEscrowedPrize, setIsEscrowedPrize] = useState(false);
-  const [depositingPrize, setDepositingPrize] = useState(false);
   const [withdrawingPrize, setWithdrawingPrize] = useState(false);
   const [deletingRaffle, setDeletingRaffle] = useState(false);
   const [is1155Approved, setIs1155Approved] = useState(false);
@@ -971,13 +1008,13 @@ const RaffleDetailPage = () => {
       if (!mintWinnerAddress || mintWinnerAddress.length !== 42) throw new Error('Please enter a valid address');
       const result = await executeTransaction(() => raffleContract.mintToWinner(mintWinnerAddress));
       if (result.success) {
-        alert('mintToWinner() executed successfully!');
+        toast.success('mintToWinner() executed successfully!');
         window.location.reload();
       } else {
         throw new Error(result.error);
       }
     } catch (err) {
-      alert('mintToWinner failed: ' + err.message);
+      toast.error('mintToWinner failed: ' + err.message);
     } finally {
       setMintingToWinner(false);
     }
@@ -995,13 +1032,13 @@ const RaffleDetailPage = () => {
       if (!assignPrizeAddress || assignPrizeAddress.length !== 42) throw new Error('Please enter a valid address');
       const result = await executeTransaction(() => raffleContract.setExternalPrize(assignPrizeAddress));
       if (result.success) {
-        alert('Prize assigned successfully!');
+        toast.success('Prize assigned successfully!');
         window.location.reload();
       } else {
         throw new Error(result.error);
       }
     } catch (err) {
-      alert('Assign Prize failed: ' + err.message);
+      toast.error('Assign Prize failed: ' + err.message);
     } finally {
       setAssigningPrize(false);
     }
@@ -1121,7 +1158,7 @@ const RaffleDetailPage = () => {
         setRaffle(raffleData);
       } catch (error) {
         console.error('Error fetching raffle data:', error);
-        alert('Error loading raffle data: ' + error.message);
+        toast.error('Error loading raffle data: ' + error.message);
         // Navigate back if raffle doesn't exist
         navigate('/');
       } finally {
@@ -1250,9 +1287,9 @@ const RaffleDetailPage = () => {
       const tx = await erc1155.setApprovalForAll(raffle.address, true);
       await tx.wait();
       setIs1155Approved(true);
-      alert('Approval successful! You can now deposit the prize.');
+      toast.success('Approval successful! You can now deposit the prize.');
     } catch (e) {
-      alert('Approval failed: ' + (e?.reason || e?.message || e));
+      toast.error('Approval failed: ' + (e?.reason || e?.message || e));
     } finally {
       setApproving(false);
     }
@@ -1306,9 +1343,9 @@ const RaffleDetailPage = () => {
       const tx = await erc20.approve(raffle.address, ethers.constants.MaxUint256);
       await tx.wait();
       setIsERC20Approved(true);
-      alert('ERC20 approval successful! You can now deposit the prize.');
+      toast.success('ERC20 approval successful! You can now deposit the prize.');
     } catch (e) {
-      alert('ERC20 approval failed: ' + (e?.reason || e?.message || e));
+      toast.error('ERC20 approval failed: ' + (e?.reason || e?.message || e));
     } finally {
       setApprovingERC20(false);
     }
@@ -1368,9 +1405,9 @@ const RaffleDetailPage = () => {
       const tx = await erc721.approve(raffle.address, raffle.prizeTokenId);
       await tx.wait();
       setIsERC721Approved(true);
-      alert('ERC721 approval successful! You can now deposit the prize.');
+      toast.success('ERC721 approval successful! You can now deposit the prize.');
     } catch (e) {
-      alert('ERC721 approval failed: ' + (e?.reason || e?.message || e));
+      toast.error('ERC721 approval failed: ' + (e?.reason || e?.message || e));
     } finally {
       setApprovingERC721(false);
     }
@@ -1395,7 +1432,7 @@ const RaffleDetailPage = () => {
     );
 
     if (result.success) {
-      alert(`Successfully purchased ${quantity} ticket${quantity > 1 ? 's' : ''}!`);
+      toast.success(`Successfully purchased ${quantity} ticket${quantity > 1 ? 's' : ''}!`);
       // Refresh raffle data
       window.location.reload();
     } else {
@@ -1417,11 +1454,11 @@ const RaffleDetailPage = () => {
       await tx.wait();
       
       // Show success message or redirect
-      alert('Raffle deleted successfully!');
+      toast.success('Raffle deleted successfully!');
         navigate('/');
     } catch (error) {
       console.error('Error deleting raffle:', error);
-      alert('Failed to delete raffle: ' + error.message);
+      toast.error('Failed to delete raffle: ' + error.message);
     } finally {
       setDeletingRaffle(false);
     }
@@ -1452,29 +1489,15 @@ const RaffleDetailPage = () => {
     return <span className={`px-3 py-1 rounded-full text-sm ${colorMap[label] || colorMap['Unknown']}`}>{label}</span>;
   };
 
-  async function handleDepositPrize() {
-    setDepositingPrize(true);
-    try {
-      const contract = getContractInstance(raffleAddress, 'raffle');
-      const tx = await contract.depositEscrowPrize({ value: raffle.ethPrizeAmount || 0 });
-      await tx.wait();
-      alert('Prize deposited successfully!');
-    } catch (e) {
-      alert('Deposit failed: ' + (e?.reason || e?.message || e));
-    } finally {
-      setDepositingPrize(false);
-    }
-  }
-
   async function handleWithdrawPrize() {
     setWithdrawingPrize(true);
     try {
       const contract = getContractInstance(raffleAddress, 'raffle');
       const tx = await contract.withdrawEscrowedPrize();
       await tx.wait();
-      alert('Prize withdrawn successfully!');
+      toast.success('Prize withdrawn successfully!');
     } catch (e) {
-      alert('Withdraw failed: ' + (e?.reason || e?.message || e));
+      toast.error('Withdraw failed: ' + (e?.reason || e?.message || e));
     } finally {
       setWithdrawingPrize(false);
     }
@@ -1618,95 +1641,6 @@ const RaffleDetailPage = () => {
                 )}
               </div>
             )}
-            {/* ERC20 Approval and Deposit Prize logic */}
-            {connected &&
-              address?.toLowerCase() === raffle.creator.toLowerCase() &&
-              isEscrowedPrize &&
-              raffle.erc20PrizeToken &&
-              raffle.erc20PrizeToken !== ethers.constants.AddressZero &&
-              raffle.erc20PrizeAmount &&
-              !isERC20Approved && (
-                <Button
-                  onClick={handleApproveERC20}
-                  className="ml-2 bg-blue-600 hover:bg-blue-700 text-white"
-                  disabled={approvingERC20 || checkingERC20Approval}
-                >
-                  {approvingERC20 ? 'Approving...' : 'Approve ERC20 Prize'}
-                </Button>
-            )}
-            {connected &&
-              address?.toLowerCase() === raffle.creator.toLowerCase() &&
-              isEscrowedPrize &&
-              raffle.erc20PrizeToken &&
-              raffle.erc20PrizeToken !== ethers.constants.AddressZero &&
-              raffle.erc20PrizeAmount &&
-              isERC20Approved && (
-                <Button
-                  onClick={handleDepositPrize}
-                  className="ml-2 bg-green-600 hover:bg-green-700 text-white"
-                  disabled={depositingPrize}
-                >
-                  {depositingPrize ? 'Depositing...' : 'Deposit Prize'}
-                </Button>
-            )}
-            {/* ERC721 Approval and Deposit Prize logic */}
-            {connected &&
-              address?.toLowerCase() === raffle.creator.toLowerCase() &&
-              isEscrowedPrize &&
-              raffle.standard === 0 &&
-              raffle.prizeCollection &&
-              typeof raffle.prizeTokenId !== 'undefined' &&
-              !isERC721Approved && (
-                <Button
-                  onClick={handleApproveERC721}
-                  className="ml-2 bg-blue-600 hover:bg-blue-700 text-white"
-                  disabled={approvingERC721 || checkingERC721Approval}
-                >
-                  {approvingERC721 ? 'Approving...' : 'Approve NFT Prize'}
-                </Button>
-            )}
-            {connected &&
-              address?.toLowerCase() === raffle.creator.toLowerCase() &&
-              isEscrowedPrize &&
-              raffle.standard === 0 &&
-              raffle.prizeCollection &&
-              typeof raffle.prizeTokenId !== 'undefined' &&
-              isERC721Approved && (
-                <Button
-                  onClick={handleDepositPrize}
-                  className="ml-2 bg-green-600 hover:bg-green-700 text-white"
-                  disabled={depositingPrize}
-                >
-                  {depositingPrize ? 'Depositing...' : 'Deposit Prize'}
-                </Button>
-            )}
-            {/* ERC1155 Approval and Deposit Prize logic */}
-            {connected &&
-              address?.toLowerCase() === raffle.creator.toLowerCase() &&
-              isEscrowedPrize &&
-              raffle.standard === 1 &&
-              (
-                checkingApproval ? (
-                  <Button disabled className="ml-2 bg-blue-300 text-white">Checking approval...</Button>
-                ) : !is1155Approved ? (
-                  <Button
-                    onClick={handleApprove1155}
-                    className="ml-2 bg-blue-600 hover:bg-blue-700 text-white"
-                    disabled={approving}
-                  >
-                    {approving ? 'Approving...' : 'Approve NFT Prize'}
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleDepositPrize}
-                    className="ml-2 bg-green-600 hover:bg-green-700 text-white"
-                    disabled={depositingPrize}
-                  >
-                    {depositingPrize ? 'Depositing...' : 'Deposit Prize'}
-                  </Button>
-                )
-              )
-            }
             {/* Withdraw Prize button for creator if escrowed and not withdrawn */}
             {connected &&
               address?.toLowerCase() === raffle.creator.toLowerCase() &&

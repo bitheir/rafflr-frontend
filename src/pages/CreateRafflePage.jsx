@@ -9,9 +9,12 @@ import SocialTaskCreator from '../components/SocialTaskCreator';
 import { SocialTaskService } from '../lib/socialTaskService';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
+import { toast } from '../components/ui/sonner';
+import { contractABIs } from '../contracts/contractABIs';
 
+// --- ERC1155DropForm ---
 function ERC1155DropForm() {
-  const { connected, address } = useWallet();
+  const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
   const [socialTasks, setSocialTasks] = useState([]);
@@ -28,6 +31,8 @@ function ERC1155DropForm() {
     maxTicketsPerParticipant: '',
     ticketPrice: '',
   });
+  const [approvalLoading, setApprovalLoading] = useState(false);
+  const [hasApproval, setHasApproval] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -37,14 +42,54 @@ function ERC1155DropForm() {
     setSocialTasks(tasks);
   };
 
+  // Check approval on mount and when relevant fields change
+  useEffect(() => {
+    async function checkApproval() {
+      if (!connected || !contracts.raffleDeployer || !provider || !formData.collectionAddress) {
+        setHasApproval(false);
+        return;
+      }
+      try {
+        const signer = provider.getSigner();
+        const erc1155 = new ethers.Contract(formData.collectionAddress, contractABIs.erc1155Prize, signer);
+        const approved = await erc1155.isApprovedForAll(address, contracts.raffleDeployer.address);
+        setHasApproval(approved);
+      } catch {
+        setHasApproval(false);
+      }
+    }
+    checkApproval();
+  }, [connected, contracts.raffleDeployer, provider, address, formData.collectionAddress]);
+
+  const handleApprove = async () => {
+    setApprovalLoading(true);
+    try {
+      const signer = provider.getSigner();
+      const erc1155 = new ethers.Contract(formData.collectionAddress, contractABIs.erc1155Prize, signer);
+      const tx = await erc1155.setApprovalForAll(contracts.raffleDeployer.address, true);
+      await tx.wait();
+      toast.success('ERC1155 approval successful!');
+      setHasApproval(true);
+    } catch (err) {
+      toast.error('ERC1155 approval failed: ' + (err?.reason || err?.message || err));
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!connected || !contracts.raffleDeployer) {
-      alert('Please connect your wallet and ensure contracts are configured');
+    if (!connected || !contracts.raffleDeployer || !provider) {
+      toast.error('Please connect your wallet and ensure contracts are configured');
+      return;
+    }
+    if (!hasApproval) {
+      toast.error('Please approve the contract to spend your prize first.');
       return;
     }
     setLoading(true);
     try {
+      const signer = provider.getSigner();
       const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
       const duration = parseInt(formData.duration) * 60;
       const ticketPrice = formData.ticketPrice ? ethers.utils.parseEther(formData.ticketPrice) : 0;
@@ -74,54 +119,24 @@ function ERC1155DropForm() {
         erc20PrizeAmount: 0,
         ethPrizeAmount: 0
       };
-      const result = await executeTransaction(
-        contracts.raffleDeployer.createRaffle,
-        [
-          params.name,
-          params.startTime,
-          params.duration,
-          params.ticketLimit,
-          params.winnersCount,
-          params.maxTicketsPerParticipant,
-          params.isPrized,
-          params.customTicketPrice,
-          params.erc721Drop,
-          params.prizeCollection,
-          params.standard,
-          params.prizeTokenId,
-          params.amountPerWinner,
-          params.collectionName,
-          params.collectionSymbol,
-          params.collectionBaseURI,
-          params.creator,
-          params.royaltyPercentage,
-          params.royaltyRecipient,
-          params.maxSupply,
-          params.erc20PrizeToken,
-          params.erc20PrizeAmount,
-          params.ethPrizeAmount
-        ]
-      );
-      if (result.success) {
-        alert('ERC1155 Collection raffle created successfully!');
-        setFormData({
-          name: '',
-          collectionAddress: '',
-          tokenId: '',
-          unitsPerWinner: '',
-          startTime: '',
-          duration: '',
-          ticketLimit: '',
-          winnersCount: '',
-          maxTicketsPerParticipant: '',
-          ticketPrice: '',
-        });
-      } else {
-        throw new Error(result.error);
-      }
+      const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
+      await tx.wait();
+      toast.success('ERC1155 Collection raffle created successfully!');
+      setFormData({
+        name: '',
+        collectionAddress: '',
+        tokenId: '',
+        unitsPerWinner: '',
+        startTime: '',
+        duration: '',
+        ticketLimit: '',
+        winnersCount: '',
+        maxTicketsPerParticipant: '',
+        ticketPrice: '',
+      });
     } catch (error) {
       console.error('Error creating raffle:', error);
-      alert('Error creating raffle: ' + error.message);
+      toast.error(error.message || 'Error creating raffle');
     } finally {
       setLoading(false);
     }
@@ -270,11 +285,21 @@ function ERC1155DropForm() {
           </div>
         )}
 
-        <div className="flex gap-4">
+        <div className="flex gap-2 mt-4 justify-center">
+          {!hasApproval && (
+            <Button
+              type="button"
+              onClick={handleApprove}
+              disabled={approvalLoading || !connected}
+              className="w-48 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-2 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-colors disabled:opacity-50"
+            >
+              {approvalLoading ? 'Approving...' : 'Approve'}
+            </Button>
+          )}
           <Button
             type="submit"
-            disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            disabled={loading || !connected || !hasApproval}
+            className="w-48 bg-gradient-to-r from-orange-500 to-red-600 text-white py-2 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -324,7 +349,7 @@ const PrizedRaffleForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!connected || !contracts.raffleDeployer) {
-      alert('Please connect your wallet and ensure contracts are configured');
+      toast.error('Please connect your wallet and ensure contracts are configured');
       return;
     }
 
@@ -420,7 +445,7 @@ const PrizedRaffleForm = () => {
           }
         }
 
-        alert('Prized raffle created successfully!');
+        toast.success('Prized raffle created successfully!');
         setFormData({
           name: '',
           startTime: '',
@@ -448,7 +473,7 @@ const PrizedRaffleForm = () => {
       }
     } catch (error) {
       console.error('Error creating raffle:', error);
-      alert('Error creating raffle: ' + error.message);
+      toast.error('Error creating raffle: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -786,7 +811,7 @@ const NonPrizedRaffleForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!connected || !contracts.raffleDeployer) {
-      alert('Please connect your wallet and ensure contracts are configured');
+      toast.error('Please connect your wallet and ensure contracts are configured');
       return;
     }
 
@@ -818,7 +843,7 @@ const NonPrizedRaffleForm = () => {
       );
 
       if (result.success) {
-        alert('Non-prized raffle created successfully!');
+        toast.success('Non-prized raffle created successfully!');
         // Reset form
         setFormData({
           name: '',
@@ -833,7 +858,7 @@ const NonPrizedRaffleForm = () => {
       }
     } catch (error) {
       console.error('Error creating raffle:', error);
-      alert('Error creating raffle: ' + error.message);
+      toast.error('Error creating raffle: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -983,7 +1008,7 @@ const WhitelistRaffleForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!connected || !contracts.raffleDeployer) {
-      alert('Please connect your wallet and ensure contracts are configured');
+      toast.error('Please connect your wallet and ensure contracts are configured');
       return;
     }
     setLoading(true);
@@ -1026,7 +1051,7 @@ const WhitelistRaffleForm = () => {
         result = { success: false, error: error.message };
       }
       if (result.success) {
-        alert('Whitelist raffle created successfully!');
+        toast.success('Whitelist raffle created successfully!');
         setFormData({
           name: '',
           startTime: '',
@@ -1040,7 +1065,7 @@ const WhitelistRaffleForm = () => {
       }
     } catch (error) {
       console.error('Error creating raffle:', error);
-      alert('Error creating raffle: ' + error.message);
+      toast.error('Error creating raffle: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -1190,7 +1215,7 @@ const NewERC721DropForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!connected || !contracts.raffleDeployer) {
-      alert('Please connect your wallet and ensure contracts are configured');
+      toast.error('Please connect your wallet and ensure contracts are configured');
       return;
     }
     setLoading(true);
@@ -1237,7 +1262,7 @@ const NewERC721DropForm = () => {
         result = { success: false, error: error.message };
       }
       if (result.success) {
-        alert('New ERC721 Collection raffle created successfully!');
+        toast.success('New ERC721 Collection raffle created successfully!');
         setFormData({
           name: '',
           startTime: '',
@@ -1257,7 +1282,7 @@ const NewERC721DropForm = () => {
       }
     } catch (error) {
       console.error('Error creating raffle:', error);
-      alert('Error creating raffle: ' + error.message);
+      toast.error('Error creating raffle: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -1481,7 +1506,7 @@ function ExistingERC721DropForm() {
     e.preventDefault();
     if (!validate()) return;
     if (!connected || !contracts.raffleDeployer) {
-      alert('Please connect your wallet and ensure contracts are configured');
+      toast.error('Please connect your wallet and ensure contracts are configured');
       return;
     }
     setLoading(true);
@@ -1523,7 +1548,7 @@ function ExistingERC721DropForm() {
         result = { success: false, error: error.message };
       }
       if (result.success) {
-        alert('Existing ERC721 Collection raffle created successfully!');
+        toast.success('Existing ERC721 Collection raffle created successfully!');
         setFormData({
           name: '',
           collection: '',
@@ -1539,7 +1564,7 @@ function ExistingERC721DropForm() {
       }
     } catch (error) {
       console.error('Error creating raffle:', error);
-      alert('Error creating raffle: ' + error.message);
+      toast.error('Error creating raffle: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -1836,19 +1861,21 @@ const CreateRafflePage = () => {
             Create an on-chain raffle for your community
           </h1>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 max-w-7xl mx-auto mt-16">
-          <div className="lg:col-span-1">
-            {renderFilterCard()}
+        <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8 max-w-7xl mx-auto mt-16">
+          <div className="lg:col-span-1 flex flex-col gap-6 items-start">
+            <div className="w-full max-w-[420px]">
+              {renderFilterCard()}
+            </div>
             {raffleType === 'NFTDrop' && nftStandard === 'ERC1155' && (
               <Link
                 to="/deploy-erc1155-collection"
-                className="block mt-6 bg-gradient-to-r from-green-500 to-teal-600 text-white px-5 py-3 rounded-lg hover:from-green-600 hover:to-teal-700 transition-colors flex items-center justify-center gap-2 text-base h-12"
+                className="block w-full max-w-[420px] mt-2 bg-gradient-to-r from-green-500 to-teal-600 text-white px-5 py-3 rounded-lg hover:from-green-600 hover:to-teal-700 transition-colors flex items-center justify-center gap-2 text-base h-12"
               >
                 Deploy ERC1155 Collection
               </Link>
             )}
           </div>
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-1">
             {renderForm()}
           </div>
         </div>
@@ -1859,7 +1886,7 @@ const CreateRafflePage = () => {
 
 // Add LuckySaleERC721Form
 function LuckySaleERC721Form() {
-  const { connected, address } = useWallet();
+  const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
   const [socialTasks, setSocialTasks] = useState([]);
@@ -1875,6 +1902,8 @@ function LuckySaleERC721Form() {
     maxTicketsPerParticipant: '',
     ticketPrice: '',
   });
+  const [approvalLoading, setApprovalLoading] = useState(false);
+  const [hasApproval, setHasApproval] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -1884,14 +1913,53 @@ function LuckySaleERC721Form() {
     setSocialTasks(tasks);
   };
 
+  useEffect(() => {
+    async function checkApproval() {
+      if (!connected || !contracts.raffleDeployer || !provider || !formData.collectionAddress || !formData.tokenId) {
+        setHasApproval(false);
+        return;
+      }
+      try {
+        const signer = provider.getSigner();
+        const erc721 = new ethers.Contract(formData.collectionAddress, contractABIs.erc721Prize, signer);
+        const approved = await erc721.getApproved(formData.tokenId);
+        setHasApproval(approved.toLowerCase() === contracts.raffleDeployer.address.toLowerCase());
+      } catch {
+        setHasApproval(false);
+      }
+    }
+    checkApproval();
+  }, [connected, contracts.raffleDeployer, provider, address, formData.collectionAddress, formData.tokenId]);
+
+  const handleApprove = async () => {
+    setApprovalLoading(true);
+    try {
+      const signer = provider.getSigner();
+      const erc721 = new ethers.Contract(formData.collectionAddress, contractABIs.erc721Prize, signer);
+      const tx = await erc721.approve(contracts.raffleDeployer.address, formData.tokenId);
+      await tx.wait();
+      toast.success('ERC721 approval successful!');
+      setHasApproval(true);
+    } catch (err) {
+      toast.error('ERC721 approval failed: ' + (err?.reason || err?.message || err));
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!connected || !contracts.raffleDeployer) {
-      alert('Please connect your wallet and ensure contracts are configured');
+    if (!connected || !contracts.raffleDeployer || !provider) {
+      toast.error('Please connect your wallet and ensure contracts are configured');
+      return;
+    }
+    if (!hasApproval) {
+      toast.error('Please approve the contract to spend your prize first.');
       return;
     }
     setLoading(true);
     try {
+      const signer = provider.getSigner();
       const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
       const duration = parseInt(formData.duration) * 60;
       const ticketPrice = formData.ticketPrice ? ethers.utils.parseEther(formData.ticketPrice) : 0;
@@ -1920,33 +1988,23 @@ function LuckySaleERC721Form() {
         erc20PrizeAmount: 0,
         ethPrizeAmount: 0
       };
-      let result = { success: false };
-      try {
-        const tx = await contracts.raffleDeployer.createRaffle(params);
-        const receipt = await tx.wait();
-        result = { success: true, receipt, hash: tx.hash };
-      } catch (error) {
-        result = { success: false, error: error.message };
-      }
-      if (result.success) {
-        alert('Lucky Sale ERC721 raffle created successfully!');
-        setFormData({
-          name: '',
-          collectionAddress: '',
-          tokenId: '',
-          startTime: '',
-          duration: '',
-          ticketLimit: '',
-          winnersCount: '',
-          maxTicketsPerParticipant: '',
-          ticketPrice: '',
-        });
-      } else {
-        throw new Error(result.error);
-      }
+      const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
+      await tx.wait();
+      toast.success('Lucky Sale ERC721 raffle created successfully!');
+      setFormData({
+        name: '',
+        collectionAddress: '',
+        tokenId: '',
+        startTime: '',
+        duration: '',
+        ticketLimit: '',
+        winnersCount: '',
+        maxTicketsPerParticipant: '',
+        ticketPrice: '',
+      });
     } catch (error) {
       console.error('Error creating raffle:', error);
-      alert('Error creating raffle: ' + error.message);
+      toast.error(error.message || 'Error creating raffle');
     } finally {
       setLoading(false);
     }
@@ -2084,11 +2142,21 @@ function LuckySaleERC721Form() {
           </div>
         )}
 
-        <div className="flex gap-4">
+        <div className="flex gap-2 mt-4 justify-center">
+          {!hasApproval && (
+            <Button
+              type="button"
+              onClick={handleApprove}
+              disabled={approvalLoading || !connected}
+              className="w-48 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-2 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-colors disabled:opacity-50"
+            >
+              {approvalLoading ? 'Approving...' : 'Approve'}
+            </Button>
+          )}
           <Button
             type="submit"
-            disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            disabled={loading || !connected || !hasApproval}
+            className="w-48 bg-gradient-to-r from-orange-500 to-red-600 text-white py-2 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -2100,7 +2168,7 @@ function LuckySaleERC721Form() {
 
 // Add LuckySaleERC1155Form (like ERC1155DropForm but no deploy button)
 function LuckySaleERC1155Form() {
-  const { connected, address } = useWallet();
+  const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
   const [socialTasks, setSocialTasks] = useState([]);
@@ -2117,6 +2185,8 @@ function LuckySaleERC1155Form() {
     maxTicketsPerParticipant: '',
     ticketPrice: '',
   });
+  const [approvalLoading, setApprovalLoading] = useState(false);
+  const [hasApproval, setHasApproval] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -2126,14 +2196,53 @@ function LuckySaleERC1155Form() {
     setSocialTasks(tasks);
   };
 
+  useEffect(() => {
+    async function checkApproval() {
+      if (!connected || !contracts.raffleDeployer || !provider || !formData.collectionAddress) {
+        setHasApproval(false);
+        return;
+      }
+      try {
+        const signer = provider.getSigner();
+        const erc1155 = new ethers.Contract(formData.collectionAddress, contractABIs.erc1155Prize, signer);
+        const approved = await erc1155.isApprovedForAll(address, contracts.raffleDeployer.address);
+        setHasApproval(approved);
+      } catch {
+        setHasApproval(false);
+      }
+    }
+    checkApproval();
+  }, [connected, contracts.raffleDeployer, provider, address, formData.collectionAddress]);
+
+  const handleApprove = async () => {
+    setApprovalLoading(true);
+    try {
+      const signer = provider.getSigner();
+      const erc1155 = new ethers.Contract(formData.collectionAddress, contractABIs.erc1155Prize, signer);
+      const tx = await erc1155.setApprovalForAll(contracts.raffleDeployer.address, true);
+      await tx.wait();
+      toast.success('ERC1155 approval successful!');
+      setHasApproval(true);
+    } catch (err) {
+      toast.error('ERC1155 approval failed: ' + (err?.reason || err?.message || err));
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!connected || !contracts.raffleDeployer) {
-      alert('Please connect your wallet and ensure contracts are configured');
+    if (!connected || !contracts.raffleDeployer || !provider) {
+      toast.error('Please connect your wallet and ensure contracts are configured');
+      return;
+    }
+    if (!hasApproval) {
+      toast.error('Please approve the contract to spend your prize first.');
       return;
     }
     setLoading(true);
     try {
+      const signer = provider.getSigner();
       const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
       const duration = parseInt(formData.duration) * 60;
       const ticketPrice = formData.ticketPrice ? ethers.utils.parseEther(formData.ticketPrice) : 0;
@@ -2163,34 +2272,24 @@ function LuckySaleERC1155Form() {
         erc20PrizeAmount: 0,
         ethPrizeAmount: 0
       };
-      let result = { success: false };
-      try {
-        const tx = await contracts.raffleDeployer.createRaffle(params);
-        const receipt = await tx.wait();
-        result = { success: true, receipt, hash: tx.hash };
-      } catch (error) {
-        result = { success: false, error: error.message };
-      }
-      if (result.success) {
-        alert('Lucky Sale ERC1155 raffle created successfully!');
-        setFormData({
-          name: '',
-          collectionAddress: '',
-          tokenId: '',
-          unitsPerWinner: '',
-          startTime: '',
-          duration: '',
-          ticketLimit: '',
-          winnersCount: '',
-          maxTicketsPerParticipant: '',
-          ticketPrice: '',
-        });
-      } else {
-        throw new Error(result.error);
-      }
+      const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
+      await tx.wait();
+      toast.success('Lucky Sale ERC1155 raffle created successfully!');
+      setFormData({
+        name: '',
+        collectionAddress: '',
+        tokenId: '',
+        unitsPerWinner: '',
+        startTime: '',
+        duration: '',
+        ticketLimit: '',
+        winnersCount: '',
+        maxTicketsPerParticipant: '',
+        ticketPrice: '',
+      });
     } catch (error) {
       console.error('Error creating raffle:', error);
-      alert('Error creating raffle: ' + error.message);
+      toast.error(error.message || 'Error creating raffle');
     } finally {
       setLoading(false);
     }
@@ -2351,11 +2450,21 @@ function LuckySaleERC1155Form() {
           </div>
         )}
 
-        <div className="flex gap-4">
+        <div className="flex gap-2 mt-4 justify-center">
+          {!hasApproval && (
+            <Button
+              type="button"
+              onClick={handleApprove}
+              disabled={approvalLoading || !connected}
+              className="w-48 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-2 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-colors disabled:opacity-50"
+            >
+              {approvalLoading ? 'Approving...' : 'Approve'}
+            </Button>
+          )}
           <Button
             type="submit"
-            disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            disabled={loading || !connected || !hasApproval}
+            className="w-48 bg-gradient-to-r from-orange-500 to-red-600 text-white py-2 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>
@@ -2393,7 +2502,7 @@ function ETHGiveawayForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!connected || !contracts.raffleDeployer) {
-      alert('Please connect your wallet and ensure contracts are configured');
+      toast.error('Please connect your wallet and ensure contracts are configured');
       return;
     }
     setLoading(true);
@@ -2435,7 +2544,7 @@ function ETHGiveawayForm() {
         result = { success: false, error: error.message };
       }
       if (result.success) {
-        alert('ETH Giveaway raffle created successfully!');
+        toast.success('ETH Giveaway raffle created successfully!');
         setFormData({
           name: '',
           ethAmount: '',
@@ -2451,7 +2560,7 @@ function ETHGiveawayForm() {
       }
     } catch (error) {
       console.error('Error creating raffle:', error);
-      alert('Error creating raffle: ' + error.message);
+      toast.error('Error creating raffle: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -2583,7 +2692,7 @@ function ETHGiveawayForm() {
 
 // Add ERC20GiveawayForm
 function ERC20GiveawayForm() {
-  const { connected, address } = useWallet();
+  const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
   const [socialTasks, setSocialTasks] = useState([]);
@@ -2598,6 +2707,8 @@ function ERC20GiveawayForm() {
     winnersCount: '',
     maxTicketsPerParticipant: ''
   });
+  const [approvalLoading, setApprovalLoading] = useState(false);
+  const [hasApproval, setHasApproval] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -2607,17 +2718,61 @@ function ERC20GiveawayForm() {
     setSocialTasks(tasks);
   };
 
+  useEffect(() => {
+    async function checkApproval() {
+      if (!connected || !contracts.raffleDeployer || !provider || !formData.tokenAddress || !formData.tokenAmount) {
+        setHasApproval(false);
+        return;
+      }
+      try {
+        const signer = provider.getSigner();
+        const erc20 = new ethers.Contract(formData.tokenAddress, contractABIs.erc20, signer);
+        const decimals = await erc20.decimals();
+        const parsedAmount = ethers.utils.parseUnits(formData.tokenAmount, decimals);
+        const allowance = await erc20.allowance(address, contracts.raffleDeployer.address);
+        setHasApproval(allowance.gte(parsedAmount));
+      } catch {
+        setHasApproval(false);
+      }
+    }
+    checkApproval();
+  }, [connected, contracts.raffleDeployer, provider, address, formData.tokenAddress, formData.tokenAmount]);
+
+  const handleApprove = async () => {
+    setApprovalLoading(true);
+    try {
+      const signer = provider.getSigner();
+      const erc20 = new ethers.Contract(formData.tokenAddress, contractABIs.erc20, signer);
+      const decimals = await erc20.decimals();
+      const parsedAmount = ethers.utils.parseUnits(formData.tokenAmount, decimals);
+      const tx = await erc20.approve(contracts.raffleDeployer.address, parsedAmount);
+      await tx.wait();
+      toast.success('ERC20 approval successful!');
+      setHasApproval(true);
+    } catch (err) {
+      toast.error('ERC20 approval failed: ' + (err?.reason || err?.message || err));
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!connected || !contracts.raffleDeployer) {
-      alert('Please connect your wallet and ensure contracts are configured');
+    if (!connected || !contracts.raffleDeployer || !provider) {
+      toast.error('Please connect your wallet and ensure contracts are configured');
+      return;
+    }
+    if (!hasApproval) {
+      toast.error('Please approve the contract to spend your prize first.');
       return;
     }
     setLoading(true);
     try {
+      const signer = provider.getSigner();
+      const decimals = await (new ethers.Contract(formData.tokenAddress, contractABIs.erc20, signer)).decimals();
       const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
       const duration = parseInt(formData.duration) * 60;
-      const tokenAmount = formData.tokenAmount ? ethers.utils.parseUnits(formData.tokenAmount, 18) : ethers.BigNumber.from(0); // default 18 decimals
+      const tokenAmount = formData.tokenAmount ? ethers.utils.parseUnits(formData.tokenAmount, decimals) : ethers.BigNumber.from(0); // default 18 decimals
       const params = {
         name: formData.name,
         startTime,
@@ -2643,33 +2798,23 @@ function ERC20GiveawayForm() {
         erc20PrizeAmount: tokenAmount,
         ethPrizeAmount: ethers.BigNumber.from(0)
       };
-      let result = { success: false };
-      try {
-        const tx = await contracts.raffleDeployer.createRaffle(params);
-        const receipt = await tx.wait();
-        result = { success: true, receipt, hash: tx.hash };
-      } catch (error) {
-        result = { success: false, error: error.message };
-      }
-      if (result.success) {
-        alert('ERC20 Giveaway raffle created successfully!');
-        setFormData({
-          name: '',
-          tokenAddress: '',
-          tokenAmount: '',
-          startTime: '',
-          duration: '',
-          ticketLimit: '',
-          winnersCount: '',
-          maxTicketsPerParticipant: ''
-        });
-        setSocialTasks([]);
-      } else {
-        throw new Error(result.error);
-      }
+      const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
+      await tx.wait();
+      toast.success('ERC20 Giveaway raffle created successfully!');
+      setFormData({
+        name: '',
+        tokenAddress: '',
+        tokenAmount: '',
+        startTime: '',
+        duration: '',
+        ticketLimit: '',
+        winnersCount: '',
+        maxTicketsPerParticipant: ''
+      });
+      setSocialTasks([]);
     } catch (error) {
       console.error('Error creating raffle:', error);
-      alert('Error creating raffle: ' + error.message);
+      toast.error(error.message || 'Error creating raffle');
     } finally {
       setLoading(false);
     }
@@ -2796,11 +2941,21 @@ function ERC20GiveawayForm() {
           </div>
         )}
 
-        <div className="flex gap-4">
+        <div className="flex gap-2 mt-4 justify-center">
+          {!hasApproval && (
+            <Button
+              type="button"
+              onClick={handleApprove}
+              disabled={approvalLoading || !connected}
+              className="w-48 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-2 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-colors disabled:opacity-50"
+            >
+              {approvalLoading ? 'Approving...' : 'Approve'}
+            </Button>
+          )}
           <Button
             type="submit"
-            disabled={loading || !connected}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+            disabled={loading || !connected || !hasApproval}
+            className="w-48 bg-gradient-to-r from-orange-500 to-red-600 text-white py-2 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50"
           >
             {loading ? 'Creating...' : 'Create Raffle'}
           </Button>

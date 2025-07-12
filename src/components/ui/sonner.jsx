@@ -1,4 +1,4 @@
-import { Toaster as Sonner } from "sonner";
+import { toast as sonnerToast, Toaster as Sonner } from "sonner";
 
 const Toaster = ({
   ...props
@@ -11,4 +11,4 @@ const Toaster = ({
   );
 }
 
-export { Toaster }
+export { Toaster, sonnerToast as toast }

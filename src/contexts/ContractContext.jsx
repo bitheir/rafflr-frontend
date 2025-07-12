@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import { SUPPORTED_NETWORKS } from '../networks';
 import { useWallet } from './WalletContext';
 import { contractABIs } from '../contracts/contractABIs';
-import { CONTRACT_ADDRESSES } from '../constants';
+import { toast } from '../components/ui/sonner';
 
 const ContractContext = createContext();
 
@@ -15,7 +16,7 @@ export const useContract = () => {
 };
 
 export const ContractProvider = ({ children }) => {
-  const { signer, provider, connected } = useWallet();
+  const { signer, provider, connected, chainId } = useWallet();
   const [contracts, setContracts] = useState({});
 
   // Initialize contracts when wallet is connected and addresses are available
@@ -32,33 +33,33 @@ export const ContractProvider = ({ children }) => {
 
     try {
       // Initialize main contracts
-      if (CONTRACT_ADDRESSES.raffleManager) {
+      if (SUPPORTED_NETWORKS[chainId]?.contractAddresses?.raffleManager) {
         newContracts.raffleManager = new ethers.Contract(
-          CONTRACT_ADDRESSES.raffleManager,
+          SUPPORTED_NETWORKS[chainId]?.contractAddresses?.raffleManager,
           contractABIs.raffleManager,
           signer
         );
       }
 
-      if (CONTRACT_ADDRESSES.raffleDeployer) {
+      if (SUPPORTED_NETWORKS[chainId]?.contractAddresses?.raffleDeployer) {
         newContracts.raffleDeployer = new ethers.Contract(
-          CONTRACT_ADDRESSES.raffleDeployer,
+          SUPPORTED_NETWORKS[chainId]?.contractAddresses?.raffleDeployer,
           contractABIs.raffleDeployer,
           signer
         );
       }
 
-      if (CONTRACT_ADDRESSES.revenueManager) {
+      if (SUPPORTED_NETWORKS[chainId]?.contractAddresses?.revenueManager) {
         newContracts.revenueManager = new ethers.Contract(
-          CONTRACT_ADDRESSES.revenueManager,
+          SUPPORTED_NETWORKS[chainId]?.contractAddresses?.revenueManager,
           contractABIs.revenueManager,
           signer
         );
       }
 
-      if (CONTRACT_ADDRESSES.nftFactory) {
+      if (SUPPORTED_NETWORKS[chainId]?.contractAddresses?.nftFactory) {
         newContracts.nftFactory = new ethers.Contract(
-          CONTRACT_ADDRESSES.nftFactory,
+          SUPPORTED_NETWORKS[chainId]?.contractAddresses?.nftFactory,
           contractABIs.nftFactory,
           signer
         );
@@ -89,8 +90,16 @@ export const ContractProvider = ({ children }) => {
       const receipt = await tx.wait();
       return { success: true, receipt, hash: tx.hash };
     } catch (error) {
-      console.error('Transaction failed:', error);
-      return { success: false, error: error.message };
+      let message = 'Transaction failed';
+      if (error?.reason) {
+        message = error.reason;
+      } else if (error?.data?.message) {
+        message = error.data.message;
+      } else if (error?.message) {
+        message = error.message;
+      }
+      toast.error(message, { duration: 4000 });
+      return { success: false, error: message };
     }
   };
 
@@ -100,8 +109,16 @@ export const ContractProvider = ({ children }) => {
       const result = await contractMethod(...args);
       return { success: true, result };
     } catch (error) {
-      console.error('Contract call failed:', error);
-      return { success: false, error: error.message };
+      let message = 'Contract call failed';
+      if (error?.reason) {
+        message = error.reason;
+      } else if (error?.data?.message) {
+        message = error.data.message;
+      } else if (error?.message) {
+        message = error.message;
+      }
+      toast.error(message, { duration: 4000 });
+      return { success: false, error: message };
     }
   };
 

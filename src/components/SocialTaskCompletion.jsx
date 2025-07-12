@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { TASK_TYPES } from '../lib/supabase';
 import { SocialTaskService } from '../lib/socialTaskService';
+import { toast } from './ui/sonner';
 
 const SocialTaskCompletion = ({ raffleAddress, onTasksCompleted }) => {
   const [tasks, setTasks] = useState([]);
@@ -72,14 +73,13 @@ const SocialTaskCompletion = ({ raffleAddress, onTasksCompleted }) => {
       if (verificationResult.success && verificationResult.verified) {
         // Mark task as completed
         setCompletedTasks(prev => new Set(prev).add(task.id));
-        console.log(`Task ${task.id} verified automatically:`, verificationResult.message);
+        toast.success(`Task ${task.id} verified automatically: ${verificationResult.message}`);
       } else {
-        console.log(`Task ${task.id} verification failed:`, verificationResult.message);
-        // Optionally show a notification to the user
-        // alert(`Task verification failed. Please make sure you completed the action: ${verificationResult.message}`);
+        toast.error(`Task ${task.id} verification failed: ${verificationResult.message}`);
       }
     } catch (error) {
       console.error('Error during automated verification:', error);
+      toast.error('Error during automated verification. Please try again.');
     } finally {
       // Remove from verifying state
       setVerifyingTasks(prev => {
@@ -125,13 +125,13 @@ const SocialTaskCompletion = ({ raffleAddress, onTasksCompleted }) => {
       // await SocialTaskService.submitTaskCompletion(raffleAddress, Array.from(completedTasks));
       
       // For now, just show success
-      alert('Tasks submitted successfully!');
+      toast.success('Tasks submitted successfully!');
       if (onTasksCompleted) {
         onTasksCompleted(Array.from(completedTasks));
       }
     } catch (error) {
       console.error('Error submitting tasks:', error);
-      alert('Error submitting tasks. Please try again.');
+      toast.error('Error submitting tasks. Please try again.');
     } finally {
       setSubmitting(false);
     }

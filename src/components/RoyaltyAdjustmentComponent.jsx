@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Settings, Search, AlertCircle } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useContract } from '../contexts/ContractContext';
+import { toast } from './ui/sonner';
 
 const RoyaltyAdjustmentComponent = () => {
   const { connected, address } = useWallet();
@@ -22,7 +23,7 @@ const RoyaltyAdjustmentComponent = () => {
 
   const loadCollectionInfo = async () => {
     if (!collectionData.address || !connected) {
-      alert('Please enter a collection address and connect your wallet');
+      toast.error('Please enter a collection address and connect your wallet');
       return;
     }
 
@@ -67,7 +68,7 @@ const RoyaltyAdjustmentComponent = () => {
 
     } catch (error) {
       console.error('Error loading collection info:', error);
-      alert('Error loading collection info: ' + error.message);
+      toast.error('Error loading collection info: ' + error.message);
       setCollectionInfo(null);
     } finally {
       setLoadingInfo(false);
@@ -76,23 +77,23 @@ const RoyaltyAdjustmentComponent = () => {
 
   const handleUpdateRoyalty = async () => {
     if (!connected || !collectionInfo) {
-      alert('Please connect your wallet and load collection info first');
+      toast.error('Please connect your wallet and load collection info first');
       return;
     }
 
     if (!collectionInfo.isOwner) {
-      alert('You are not the owner of this collection');
+      toast.error('You are not the owner of this collection');
       return;
     }
 
     const royaltyPercentage = parseFloat(collectionData.royaltyPercentage);
     if (isNaN(royaltyPercentage) || royaltyPercentage < 0 || royaltyPercentage > 10) {
-      alert('Please enter a valid royalty percentage (0-10%)');
+      toast.error('Please enter a valid royalty percentage (0-10%)');
       return;
     }
 
     if (!collectionData.royaltyRecipient) {
-      alert('Please enter a royalty recipient address');
+      toast.error('Please enter a royalty recipient address');
       return;
     }
 
@@ -115,7 +116,7 @@ const RoyaltyAdjustmentComponent = () => {
       );
 
       if (result.success) {
-        alert(`Royalty updated successfully! Transaction: ${result.hash}`);
+        toast.success(`Royalty updated successfully! Transaction: ${result.hash}`);
         // Reload collection info to show updated values
         await loadCollectionInfo();
       } else {
@@ -123,7 +124,7 @@ const RoyaltyAdjustmentComponent = () => {
       }
     } catch (error) {
       console.error('Error updating royalty:', error);
-      alert('Error updating royalty: ' + error.message);
+      toast.error('Error updating royalty: ' + error.message);
     } finally {
       setLoading(false);
     }
