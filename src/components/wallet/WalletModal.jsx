@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Wallet, X } from 'lucide-react';
 import { useWallet } from '../../contexts/WalletContext';
+import { toast } from '../ui/sonner';
 
 const WalletModal = ({ isOpen, onClose }) => {
   const { connectWallet, loading } = useWallet();
@@ -12,7 +13,7 @@ const WalletModal = ({ isOpen, onClose }) => {
       onClose();
     } catch (error) {
       console.error('Failed to connect wallet:', error);
-      alert('Failed to connect wallet: ' + error.message);
+      toast.error('Failed to connect wallet: ' + error.message);
     }
   };
 

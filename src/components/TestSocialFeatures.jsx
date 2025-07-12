@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import SocialTaskCreator from './SocialTaskCreator';
 import SocialTaskCompletion from './SocialTaskCompletion';
+import { toast } from './ui/sonner';
 
 const TestSocialFeatures = () => {
   const [socialTasks, setSocialTasks] = useState([]);
@@ -14,7 +15,7 @@ const TestSocialFeatures = () => {
 
   const handleTasksCompleted = (completedTaskIds) => {
     console.log('Tasks completed:', completedTaskIds);
-    alert(`Completed ${completedTaskIds.length} tasks!`);
+    toast.info(`Completed ${completedTaskIds.length} tasks!`);
   };
 
   return (
@@ -61,7 +62,7 @@ const TestSocialFeatures = () => {
                   visible={showSocialTasks}
                   onSubmit={(tasks) => {
                     console.log('Tasks to save:', tasks);
-                    alert(`Saving ${tasks.length} tasks to database...`);
+                    toast.info(`Saving ${tasks.length} tasks to database...`);
                   }}
                 />
               )}
