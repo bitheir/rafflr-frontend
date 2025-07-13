@@ -7,6 +7,7 @@ import { ethers } from 'ethers';
 import { Button } from '../components/ui/button';
 import { PageContainer } from '../components/Layout';
 import { categorizeRaffles } from '../utils/raffleUtils';
+import { toast } from 'sonner';
 
 const RAFFLE_STATE_LABELS = [
   'Pending',
@@ -243,6 +244,21 @@ const RaffleSection = ({ title, raffles, icon: Icon, stateKey }) => {
   const sortedRaffles = [...raffles].reverse();
   const displayedRaffles = sortedRaffles.slice(0, 4);
 
+  if (raffles.length === 0) {
+    return (
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <Icon className="h-5 w-5" />
+          {title}
+        </h2>
+        <div className="text-center py-8 bg-background rounded-lg">
+          <Icon className="h-12 w-12 text-gray-500 dark:text-gray-400 mx-auto mb-2" />
+          <p className="text-gray-500 dark:text-gray-400">No {title.toLowerCase()} at the moment</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
@@ -257,19 +273,10 @@ const RaffleSection = ({ title, raffles, icon: Icon, stateKey }) => {
           View all {title.toLowerCase()}
         </button>
       </div>
-      <div className="bg-background border border-border rounded-lg p-6">
-        {raffles.length === 0 ? (
-          <div className="text-center py-8">
-            <Icon className="h-12 w-12 text-gray-500 dark:text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-500 dark:text-gray-400">No {title.toLowerCase()} at the moment</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 min-w-0">
-            {displayedRaffles.map((raffle) => (
-              <RaffleCard key={raffle.id} raffle={raffle} />
-            ))}
-          </div>
-        )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 min-w-0">
+        {displayedRaffles.map((raffle) => (
+          <RaffleCard key={raffle.id} raffle={raffle} />
+        ))}
       </div>
     </div>
   );
@@ -521,11 +528,21 @@ const LandingPage = () => {
       </div>
 
       <div className="mt-16">
-        <RaffleSection title="Active Raffles" raffles={active} icon={Clock} stateKey="active" />
-        <RaffleSection title="Pending Raffles" raffles={pending} icon={Users} stateKey="pending" />
-        <RaffleSection title="Drawing Phase" raffles={drawing} icon={Trophy} stateKey="drawing" />
-        <RaffleSection title="Ended Raffles" raffles={ended} icon={Clock} stateKey="ended" />
-        <RaffleSection title="Completed Raffles" raffles={completed} icon={Ticket} stateKey="completed" />
+        <div className="bg-card border border-border rounded-xl p-6 mb-8">
+          <RaffleSection title="Active Raffles" raffles={active} icon={Clock} stateKey="active" />
+        </div>
+        <div className="bg-card border border-border rounded-xl p-6 mb-8">
+          <RaffleSection title="Pending Raffles" raffles={pending} icon={Users} stateKey="pending" />
+        </div>
+        <div className="bg-card border border-border rounded-xl p-6 mb-8">
+          <RaffleSection title="Drawing Phase" raffles={drawing} icon={Trophy} stateKey="drawing" />
+        </div>
+        <div className="bg-card border border-border rounded-xl p-6 mb-8">
+          <RaffleSection title="Ended Raffles" raffles={ended} icon={Clock} stateKey="ended" />
+        </div>
+        <div className="bg-card border border-border rounded-xl p-6 mb-8">
+          <RaffleSection title="Completed Raffles" raffles={completed} icon={Ticket} stateKey="completed" />
+        </div>
       </div>
 
       {raffles.length === 0 && !loading && !error && (
