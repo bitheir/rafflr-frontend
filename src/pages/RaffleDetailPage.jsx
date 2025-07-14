@@ -1929,18 +1929,6 @@ const RaffleDetailPage = () => {
             </p>
           </div>
         )}
-        
-        {/* Show info when user is creator but can't delete */}
-        {connected && 
-         address?.toLowerCase() === raffle.creator.toLowerCase() && 
-         !canDelete() && 
-         raffle.isPrized !== false && (
-          <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-800">
-              ℹ️ As the raffle creator, you can only delete this raffle when it's in pending or active state.
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Raffle Info */}
