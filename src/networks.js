@@ -81,10 +81,10 @@ export const SUPPORTED_NETWORKS = {
     rpcUrl: 'https://base-sepolia-rpc.publicnode.com',
     explorer: 'https://sepolia.basescan.org',
     contractAddresses: {
-      raffleManager: '0x70FD05B00B049E03e463b7A573F3271CDaa85c2d',
-      raffleDeployer: '0x4126dB3c09a9Aa656914f28726ff52628fE6054B',
-      revenueManager: '0x507e5eA050815CFeB1547CD361100cc5a4A21e61',
-      nftFactory: '0xf6dDf8EF7bB6f811aeFa04491B1B3Ae912a9846a'
+      raffleManager: '0x3a7648c63ADE3Ab2f155D0aCC5D7D0A7BAAd82e2',
+      raffleDeployer: '0xc0C162cbBD3bC92e166786E831b19c6329552331',
+      revenueManager: '0xDb5dFFBBE58E6168A73D6d1c961Bc4775666630c',
+      nftFactory: '0x56732E77E14a6708A073897F47c0350B243722E1'
     }
   },
   11155111: {

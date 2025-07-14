@@ -992,6 +992,33 @@ function getRefundability(raffle) {
   return { label: 'Non-winning Tickets Refundable', refundable: true, reason: 'This raffle supports refunds for non-winning tickets.' };
 }
 
+// Helper function to get the correct explorer link for the prize collection
+function getExplorerLink(address) {
+  // Try to get chainId from window.ethereum or fallback to Ethereum mainnet
+  let chainId = 1;
+  if (window.ethereum && window.ethereum.chainId) {
+    chainId = parseInt(window.ethereum.chainId, 16);
+  }
+  const explorerMap = {
+    1: 'https://etherscan.io',
+    5: 'https://goerli.etherscan.io',
+    11155111: 'https://sepolia.etherscan.io',
+    137: 'https://polygonscan.com',
+    80001: 'https://mumbai.polygonscan.com',
+    10: 'https://optimistic.etherscan.io',
+    42161: 'https://arbiscan.io',
+    56: 'https://bscscan.com',
+    97: 'https://testnet.bscscan.com',
+    43114: 'https://snowtrace.io',
+    43113: 'https://testnet.snowtrace.io',
+    8453: 'https://basescan.org',
+    84531: 'https://goerli.basescan.org',
+    84532: 'https://sepolia.basescan.org', // Base Sepolia
+  };
+  const baseUrl = explorerMap[chainId] || explorerMap[1];
+  return `${baseUrl}/address/${address}`;
+}
+
 const RaffleDetailPage = () => {
   const { raffleAddress } = useParams();
   const navigate = useNavigate();
@@ -1015,6 +1042,8 @@ const RaffleDetailPage = () => {
   const [isERC721Approved, setIsERC721Approved] = useState(false);
   const [checkingERC721Approval, setCheckingERC721Approval] = useState(false);
   const [approvingERC721, setApprovingERC721] = useState(false);
+  // Add the missing isRefundable state
+  const [isRefundable, setIsRefundable] = useState(null);
 
   // Add these states and handler at the top level of RaffleDetailPage (inside the component):
   const [showMintInput, setShowMintInput] = useState(false);
@@ -1081,7 +1110,7 @@ const RaffleDetailPage = () => {
           setLoading(true);
           return;
         }
-        const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, ethPrizeAmount, usesCustomPrice] = await Promise.all([
+        const [name, creator, startTime, duration, ticketPrice, ticketLimit, winnersCount, maxTicketsPerParticipant, isPrizedContract, prizeCollection, prizeTokenId, standard, stateNum, erc20PrizeToken, erc20PrizeAmount, ethPrizeAmount, usesCustomPrice, isRefundableFlag] = await Promise.all([
           raffleContract.name(),
           raffleContract.creator(),
           raffleContract.startTime(),
@@ -1098,7 +1127,8 @@ const RaffleDetailPage = () => {
           raffleContract.erc20PrizeToken?.(),
           raffleContract.erc20PrizeAmount?.(),
           raffleContract.ethPrizeAmount?.(),
-          raffleContract.usesCustomPrice?.()
+          raffleContract.usesCustomPrice?.(),
+          raffleContract.isRefundable?.()
         ]);
 
         // Get tickets sold by counting participants
@@ -1176,6 +1206,7 @@ const RaffleDetailPage = () => {
         };
         
         setRaffle(raffleData);
+        setIsRefundable(isRefundableFlag);
       } catch (error) {
         console.error('Error fetching raffle data:', error);
         toast.error(extractRevertReason(error));
@@ -1498,19 +1529,13 @@ const RaffleDetailPage = () => {
   };
 
   const canDelete = () => {
-    // Can delete if user is the creator and raffle is in pending or active state
-    // For raffles with prizes and custom pricing, additional conditions apply
-    const basicConditions = connected && 
-           address?.toLowerCase() === raffle?.creator.toLowerCase() && 
-                           (raffle?.state === 'Pending' || raffle?.state === 'Active');
-    
-    // If raffle has a prize collection and uses custom pricing, check those conditions
-    if (raffle?.prizeCollection && raffle?.prizeCollection !== ethers.constants.AddressZero && raffle?.usesCustomPrice) {
-      return basicConditions && raffle?.prizeCollection && raffle?.prizeCollection !== ethers.constants.AddressZero && raffle?.usesCustomPrice;
-    }
-    
-    // For other raffle types (non-prized, ETH prizes, etc.), only check basic conditions
-    return basicConditions;
+    // Only show if user is creator, raffle is Pending or Active, and (isRefundable or usesCustomPrice)
+    return (
+      connected &&
+      address?.toLowerCase() === raffle?.creator.toLowerCase() &&
+      (raffle?.state === 'Pending' || raffle?.state === 'Active') &&
+      (isRefundable === true || raffle?.usesCustomPrice === true)
+    );
   };
 
   const getStatusBadge = () => {
@@ -1939,7 +1964,7 @@ const RaffleDetailPage = () => {
           </div>
           {/* Refundability Tag as a column */}
           <div className="flex justify-center lg:justify-end items-center h-full w-full">
-            {((raffle.isPrized && (raffle.standard === 0 || raffle.standard === 1) && raffle.winnersCount > 1) || canDelete()) && (() => {
+            {isRefundable && raffle && raffle.standard !== 2 && raffle.standard !== 3 && (() => {
               const { refundable, reason, label } = getRefundability(raffle);
               return (
                 <span className={`px-3 py-1 rounded-full font-semibold ${refundable ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'} text-xs`}
@@ -2017,10 +2042,33 @@ const RaffleDetailPage = () => {
                   )}
                   {/* NFT Prize */}
                   {raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero && (!raffle.erc20PrizeAmount || raffle.erc20PrizeAmount.isZero?.() || raffle.erc20PrizeAmount === '0') && (!raffle.ethPrizeAmount || raffle.ethPrizeAmount.isZero?.() || raffle.ethPrizeAmount === '0') && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Prize Collection:</span>
-                  <span className="font-mono">{raffle.prizeCollection.slice(0, 10)}...{raffle.prizeCollection.slice(-8)}</span>
-                </div>
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Prize Collection:</span>
+                    <a
+                      href={getExplorerLink(raffle.prizeCollection)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-200"
+                    >
+                      {raffle.prizeCollection.slice(0, 10)}...{raffle.prizeCollection.slice(-8)}
+                    </a>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 dark:text-gray-400">Collection Type:</span>
+                    <span className="font-semibold">
+                      {(() => {
+                        if (typeof isEscrowedPrize === 'boolean' && typeof raffle.standard !== 'undefined') {
+                          if (!isEscrowedPrize && raffle.standard === 0) return 'Mintable ERC721';
+                          if (!isEscrowedPrize && raffle.standard === 1) return 'Mintable ERC1155';
+                          if (isEscrowedPrize && raffle.standard === 0) return 'Escrowed ERC721';
+                          if (isEscrowedPrize && raffle.standard === 1) return 'Escrowed ERC1155';
+                        }
+                        return 'Unknown';
+                      })()}
+                    </span>
+                  </div>
+                </>
                   )}
                 </>
               )}

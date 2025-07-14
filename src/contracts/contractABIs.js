@@ -19,7 +19,18 @@ export const contractABIs = {
   nftFactory: NFTFactoryABI,
   erc721Prize: ERC721PrizeABI,
   erc1155Prize: ERC1155PrizeABI,
-  raffle: RaffleABI,
+  raffle: [
+    ...RaffleABI,
+    {
+      "inputs": [],
+      "name": "isRefundable",
+      "outputs": [
+        { "internalType": "bool", "name": "", "type": "bool" }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
   erc20: ERC20ABI
 };
 

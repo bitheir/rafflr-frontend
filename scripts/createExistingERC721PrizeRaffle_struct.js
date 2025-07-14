@@ -1,7 +1,8 @@
 const { ethers } = require("hardhat");
 
-const RAFFLE_DEPLOYER_ADDRESS = "YOUR_RAFFLE_DEPLOYER_ADDRESS";
-const EXISTING_COLLECTION_ADDRESS = "YOUR_ERC721_COLLECTION_ADDRESS";
+const RAFFLE_DEPLOYER_ADDRESS = "0xFa68D57d9923f4Bb42331BC4508a82ec5eb4C425";
+const EXISTING_COLLECTION_ADDRESS = "0xa9faB4E378b344eec694f5E228BBf0BFd3d61D6e";
+const CUSTOM_TICKET_PRICE = ethers.parseEther("0.00001"); // 0.00001 ETH custom ticket price
 
 async function main() {
     const [creator] = await ethers.getSigners();
@@ -17,10 +18,11 @@ async function main() {
         winnersCount: 5,
         maxTicketsPerParticipant: 2,
         isPrized: true,
-        customTicketPrice: 0,
+        customTicketPrice: CUSTOM_TICKET_PRICE,
         erc721Drop: true,
+        erc1155Drop: false, // Make sure to include this flag
         prizeCollection: EXISTING_COLLECTION_ADDRESS,
-        standard: 0, // ERC721
+        standard: 0, // 0 = ERC721
         prizeTokenId: 0,
         amountPerWinner: 1,
         collectionName: "",
@@ -32,7 +34,12 @@ async function main() {
         maxSupply: 0,
         erc20PrizeToken: ethers.ZeroAddress,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0
+        ethPrizeAmount: 0,
+        // --- Reveal parameters are part of the existing collection's state ---
+        // --- We include them here with default values to match the struct ---
+        revealType: 0, // Instant
+        unrevealedBaseURI: "",
+        revealTime: 0
     };
 
     const tx = await raffleDeployer.createRaffle(params);
@@ -42,4 +49,4 @@ async function main() {
     console.log("New existing ERC721 prize raffle at:", event.args.raffle);
 }
 
-main().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); }); 
+main().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); });
