@@ -15,5 +15,12 @@
   { "inputs": [], "name": "unlockMinterApproval", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [], "name": "lockMinterApproval", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [], "name": "name", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "symbol", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "view", "type": "function" }
+  { "inputs": [], "name": "symbol", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "view", "type": "function" },
+  {
+    "inputs": [],
+    "name": "reveal",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
 ] 

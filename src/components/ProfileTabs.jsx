@@ -341,8 +341,8 @@ const ProfileTabs = ({
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Royalty Adjustment</CardTitle>
-            <CardDescription>Manage collection royalties</CardDescription>
+            <CardTitle>Royalty and Reveal Management</CardTitle>
+            <CardDescription>Reveal your collection and manage royalties</CardDescription>
           </CardHeader>
           <CardContent>
             <RoyaltyAdjustmentComponent />

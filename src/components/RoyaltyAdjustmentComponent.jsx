@@ -16,11 +16,28 @@ const RoyaltyAdjustmentComponent = () => {
   });
   const [collectionInfo, setCollectionInfo] = useState(null);
   const [loadingInfo, setLoadingInfo] = useState(false);
+  // Reveal state
+  const [isRevealed, setIsRevealed] = useState(null);
+  const [revealing, setRevealing] = useState(false);
 
   const handleChange = (field, value) => {
     setCollectionData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Check if collection is revealed after loading info
+  const checkRevealedStatus = async (contract) => {
+    try {
+      if (!contract) return;
+      // Try revealed() function (bool)
+      const revealed = await contract.revealed();
+      setIsRevealed(!!revealed);
+    } catch (e) {
+      // If revealed() does not exist, fallback to null
+      setIsRevealed(null);
+    }
+  };
+
+  // Update loadCollectionInfo to check revealed status
   const loadCollectionInfo = async () => {
     if (!collectionData.address || !connected) {
       toast.error('Please enter a collection address and connect your wallet');
@@ -31,7 +48,6 @@ const RoyaltyAdjustmentComponent = () => {
     try {
       const contractType = collectionData.type === 'erc721' ? 'erc721Prize' : 'erc1155Prize';
       const contract = getContractInstance(collectionData.address, contractType);
-      
       if (!contract) {
         throw new Error('Failed to create contract instance');
       }
@@ -66,10 +82,14 @@ const RoyaltyAdjustmentComponent = () => {
         royaltyRecipient: royaltyRecipient
       }));
 
+      // Check revealed status
+      await checkRevealedStatus(contract);
+
     } catch (error) {
       console.error('Error loading collection info:', error);
       toast.error('Error loading collection info: ' + error.message);
       setCollectionInfo(null);
+      setIsRevealed(null);
     } finally {
       setLoadingInfo(false);
     }
@@ -130,13 +150,33 @@ const RoyaltyAdjustmentComponent = () => {
     }
   };
 
+  // Reveal handler
+  const handleReveal = async () => {
+    if (!connected || !collectionInfo) {
+      toast.error('Please connect your wallet and load collection info first');
+      return;
+    }
+    setRevealing(true);
+    try {
+      const contractType = collectionData.type === 'erc721' ? 'erc721Prize' : 'erc1155Prize';
+      const contract = getContractInstance(collectionData.address, contractType);
+      if (!contract) throw new Error('Failed to create contract instance');
+      const result = await executeTransaction(contract.reveal);
+      if (result.success) {
+        toast.success('Collection revealed successfully!');
+        await loadCollectionInfo();
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      toast.error('Error revealing collection: ' + (error.message || error));
+    } finally {
+      setRevealing(false);
+    }
+  };
+
   return (
     <div className="bg-card border border-border rounded-lg p-6">
-      <div className="flex items-center gap-2 mb-6">
-        <Settings className="h-5 w-5" />
-        <h3 className="text-lg font-semibold">Adjust Collection Royalties</h3>
-      </div>
-
       <div className="space-y-6">
         {/* Collection Lookup Section */}
         <div className="space-y-4">
@@ -167,7 +207,7 @@ const RoyaltyAdjustmentComponent = () => {
           <button
             onClick={loadCollectionInfo}
             disabled={loadingInfo || !connected}
-            className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
             <Search className="h-4 w-4" />
             {loadingInfo ? 'Loading...' : 'Load Collection Info'}
@@ -194,6 +234,22 @@ const RoyaltyAdjustmentComponent = () => {
               <div>
                 <span className="text-muted-foreground">Current Recipient:</span>
                 <div className="font-mono break-all">{collectionInfo.currentRoyaltyRecipient}</div>
+              </div>
+              {/* Reveal status and button */}
+              <div className="col-span-2 mt-2">
+                <span className="text-muted-foreground">Reveal Status:</span>
+                <span className="ml-2 font-semibold">
+                  {isRevealed === null ? 'Unknown' : isRevealed ? 'Revealed' : 'Not Revealed'}
+                </span>
+                {!isRevealed && collectionInfo.isOwner && (
+                  <button
+                    onClick={handleReveal}
+                    disabled={revealing}
+                    className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  >
+                    {revealing ? 'Revealing...' : 'Reveal Collection'}
+                  </button>
+                )}
               </div>
             </div>
             

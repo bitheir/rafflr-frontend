@@ -364,27 +364,27 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
           // All other main action buttons (Activate, Purchase, Sold Out, etc.)
           <>
             {/* ...existing main action button logic here (Activate, Purchase, Sold Out, etc.)... */}
-            {raffle.state?.toLowerCase() === 'pending' && canActivate ? (
-              <button
-                onClick={handleActivateRaffle}
-                disabled={activating}
-                className="w-full bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-3 rounded-md hover:from-green-600 hover:to-green-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
-              >
-                {activating ? 'Activating...' : 'Activate Raffle'}
-              </button>
+        {raffle.state?.toLowerCase() === 'pending' && canActivate ? (
+          <button
+            onClick={handleActivateRaffle}
+            disabled={activating}
+            className="w-full bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-3 rounded-md hover:from-green-600 hover:to-green-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+          >
+            {activating ? 'Activating...' : 'Activate Raffle'}
+          </button>
             ) : raffle.stateNum === 2 && (address?.toLowerCase() === raffle.creator.toLowerCase() || userTickets > 0) ? (
-              <>
-                <button
-                  onClick={handleRequestRandomness}
-                  disabled={requestingRandomness}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-md hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
-                >
-                  {requestingRandomness ? 'Requesting...' : 'Request Randomness'}
-                </button>
-                <p className="text-muted-foreground mt-4 text-center text-sm">
+          <>
+            <button
+              onClick={handleRequestRandomness}
+              disabled={requestingRandomness}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-md hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+            >
+              {requestingRandomness ? 'Requesting...' : 'Request Randomness'}
+            </button>
+            <p className="text-muted-foreground mt-4 text-center text-sm">
                   The raffle has ended. {address?.toLowerCase() === raffle.creator.toLowerCase() ? 'As the creator' : 'As a participant'}, you can request the randomness to initiate winner selection.
-                </p>
-              </>
+            </p>
+          </>
             ) : (raffle.state === 'Completed' || raffle.stateNum === 4 || raffle.stateNum === 7) ? (
               <button
                 disabled
@@ -392,58 +392,58 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
               >
                 Sold Out
               </button>
-            ) : isRaffleEnded() ? (
-              <button
-                onClick={handleEndRaffle}
-                disabled={endingRaffle}
+        ) : isRaffleEnded() ? (
+          <button
+            onClick={handleEndRaffle}
+            disabled={endingRaffle}
                 className="w-full bg-gradient-to-r from-red-500 to-red-700 text-white px-6 py-3 rounded-md hover:from-red-600 hover:to-red-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
-              >
-                {endingRaffle ? 'Ending...' : 'End Raffle'}
-              </button>
-            ) : maxPurchasable <= 0 ? (
-              <button
-                disabled
-                className="w-full bg-gray-400 text-white px-6 py-3 rounded-md opacity-60 cursor-not-allowed flex items-center justify-center gap-2 text-lg"
-              >
-                Sold Out
-              </button>
-            ) : userTickets >= raffle.maxTicketsPerParticipant ? (
-              <button
-                disabled
-                className="w-full bg-gray-400 text-white px-6 py-3 rounded-md opacity-60 cursor-not-allowed flex items-center justify-center gap-2 text-lg"
-              >
-                Limit Reached
-              </button>
-            ) : (
-              <>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Quantity</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max={maxPurchasable}
-                    value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, Math.min(maxPurchasable, parseInt(e.target.value) || 1)))}
-                    className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Maximum: {maxPurchasable} tickets
-                  </p>
+          >
+            {endingRaffle ? 'Ending...' : 'End Raffle'}
+          </button>
+        ) : maxPurchasable <= 0 ? (
+          <button
+            disabled
+            className="w-full bg-gray-400 text-white px-6 py-3 rounded-md opacity-60 cursor-not-allowed flex items-center justify-center gap-2 text-lg"
+          >
+            Sold Out
+          </button>
+        ) : userTickets >= raffle.maxTicketsPerParticipant ? (
+          <button
+            disabled
+            className="w-full bg-gray-400 text-white px-6 py-3 rounded-md opacity-60 cursor-not-allowed flex items-center justify-center gap-2 text-lg"
+          >
+            Limit Reached
+          </button>
+        ) : (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-2">Quantity</label>
+                <input
+                  type="number"
+                  min="1"
+                  max={maxPurchasable}
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(1, Math.min(maxPurchasable, parseInt(e.target.value) || 1)))}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Maximum: {maxPurchasable} tickets
+                </p>
+              </div>
+              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-md">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Total Cost:</span>
+                  <span className="text-lg font-bold">{totalCost} ETH</span>
                 </div>
-                <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-md">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">Total Cost:</span>
-                    <span className="text-lg font-bold">{totalCost} ETH</span>
-                  </div>
-                </div>
-                <button
-                  onClick={handlePurchase}
-                  disabled={loading || !connected || !canPurchaseTickets()}
-                  className="w-full bg-blue-600 dark:bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <Ticket className="h-4 w-4" />
-                  {loading ? 'Processing...' : `Purchase ${quantity} Ticket${quantity > 1 ? 's' : ''}`}
-                </button>
+              </div>
+              <button
+                onClick={handlePurchase}
+                disabled={loading || !connected || !canPurchaseTickets()}
+                className="w-full bg-blue-600 dark:bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Ticket className="h-4 w-4" />
+                {loading ? 'Processing...' : `Purchase ${quantity} Ticket${quantity > 1 ? 's' : ''}`}
+              </button>
               </>
             )}
             {!connected && (
@@ -453,8 +453,8 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
                 </p>
               </div>
             )}
-          </>
-        )}
+            </>
+          )}
 
           {!connected && (
             <div className="text-center py-4">
@@ -804,17 +804,17 @@ const WinnersSection = ({ raffle, isMintableERC721 }) => {
             ) : winners.length > 0 ? (
               <div style={{ maxHeight: '320px', overflowY: 'auto' }} className="px-3">
                 {winners.map((winner, i) => (
-                  <div
-                    key={winner.index}
+                    <div
+                      key={winner.index}
                     className={`p-4 bg-background rounded-xl border-2${i !== winners.length - 1 ? ' mb-4' : ''} ${connectedAddress && winner.address.toLowerCase() === connectedAddress.toLowerCase() ? 'border-[#FFD700]' : 'border-border'}`}
-                  >
-                    <p
-                      className="text-blue-600 dark:text-blue-400 font-mono cursor-pointer underline text-base text-center"
-                      onClick={() => handleWinnerClick(winner, i)}
                     >
-                      {winner.address}
-                    </p>
-                  </div>
+                        <p
+                      className="text-blue-600 dark:text-blue-400 font-mono cursor-pointer underline text-base text-center"
+                          onClick={() => handleWinnerClick(winner, i)}
+                        >
+                          {winner.address}
+                        </p>
+                      </div>
                 ))}
                 {/* Render the modal only once, after the winners list */}
                 {openStatsIndex !== null && winners[openStatsIndex] && (
@@ -1501,7 +1501,7 @@ const RaffleDetailPage = () => {
     // Can delete if user is the creator and raffle is in pending or active state
     // For raffles with prizes and custom pricing, additional conditions apply
     const basicConditions = connected && 
-                           address?.toLowerCase() === raffle?.creator.toLowerCase() && 
+           address?.toLowerCase() === raffle?.creator.toLowerCase() && 
                            (raffle?.state === 'Pending' || raffle?.state === 'Active');
     
     // If raffle has a prize collection and uses custom pricing, check those conditions

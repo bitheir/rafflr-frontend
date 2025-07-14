@@ -35,6 +35,8 @@ const MinterApprovalComponent = () => {
   const [success, setSuccess] = useState('');
   const [collectionName, setCollectionName] = useState('');
   const [collectionSymbol, setCollectionSymbol] = useState('');
+  // 1. Add state: collectionType ('erc721' | 'erc1155' | null)
+  const [collectionType, setCollectionType] = useState(null);
 
   // Fetch collection details by address
   const fetchCollection = async () => {
@@ -46,6 +48,7 @@ const MinterApprovalComponent = () => {
     setIsApproved(false);
     setCollectionName('');
     setCollectionSymbol('');
+    setCollectionType(null); // Reset collection type
     if (!ethers.utils.isAddress(collectionAddress)) {
       setError('Please enter a valid Ethereum contract address.');
       return;
@@ -56,21 +59,57 @@ const MinterApprovalComponent = () => {
     }
     try {
       setLoading(true);
-      const contract = new ethers.Contract(
+      // Try fetching with ERC721 ABI first
+      let contract = new ethers.Contract(
         collectionAddress,
         contractABIs.erc721Prize,
         provider
       );
-      // Try to fetch minterLocked and minter to validate contract
-      const locked = await contract.minterLocked();
-      setIsLocked(locked);
-      const currentMinter = await contract.minter();
-      setCurrentMinter(currentMinter);
-      // Fetch name and symbol
-      const name = await contract.name();
-      const symbol = await contract.symbol();
-      setCollectionName(name);
-      setCollectionSymbol(symbol);
+      let isERC721 = false;
+      try {
+        const locked = await contract.minterLocked();
+        setIsLocked(locked);
+        const currentMinter = await contract.minter();
+        setCurrentMinter(currentMinter);
+        setCollectionType('erc721');
+        isERC721 = true;
+      } catch (err) {
+        // If ERC721 ABI fails, try ERC1155 ABI
+        contract = new ethers.Contract(
+          collectionAddress,
+          contractABIs.erc1155Prize,
+          provider
+        );
+        try {
+          const locked = await contract.minterLocked();
+          setIsLocked(locked);
+          const currentMinter = await contract.minter();
+          setCurrentMinter(currentMinter);
+          setCollectionType('erc1155');
+        } catch (err) {
+          setError('Failed to fetch collection: ' + err.message);
+          setCollectionType(null);
+          return;
+        }
+      }
+      // Fetch name and symbol only for ERC721
+      if (isERC721) {
+        try {
+          const name = await contract.name();
+          setCollectionName(name);
+        } catch (e) {
+          setCollectionName('N/A');
+        }
+        try {
+          const symbol = await contract.symbol();
+          setCollectionSymbol(symbol);
+        } catch (e) {
+          setCollectionSymbol('N/A');
+        }
+      } else {
+        setCollectionName('ERC1155 Collection');
+        setCollectionSymbol('N/A');
+      }
       setFetchedCollection(collectionAddress);
     } catch (err) {
       setError('Failed to fetch collection: ' + err.message);
@@ -120,12 +159,27 @@ const MinterApprovalComponent = () => {
       setError('');
       setSuccess('');
       const signer = provider.getSigner();
-      const contract = new ethers.Contract(
-        fetchedCollection,
-        contractABIs.erc721Prize,
-        signer
-      );
-      const tx = await contract.setMinterApproval(minterAddress, approved);
+      let contract;
+      if (collectionType === 'erc721') {
+        contract = new ethers.Contract(
+          fetchedCollection,
+          contractABIs.erc721Prize,
+          signer
+        );
+      } else if (collectionType === 'erc1155') {
+        contract = new ethers.Contract(
+          fetchedCollection,
+          contractABIs.erc1155Prize,
+          signer
+        );
+      }
+      
+      let tx;
+      if (collectionType === 'erc721') {
+        tx = await contract.setMinterApproval(minterAddress, approved);
+      } else if (collectionType === 'erc1155') {
+        tx = await contract.setMinterApproval(minterAddress, approved);
+      }
       await tx.wait();
       setSuccess(`Minter ${approved ? 'set' : 'removed'} successfully!`);
       setIsApproved(approved);
@@ -147,11 +201,20 @@ const MinterApprovalComponent = () => {
       setError('');
       setSuccess('');
       const signer = provider.getSigner();
-      const contract = new ethers.Contract(
-        fetchedCollection,
-        contractABIs.erc721Prize,
-        signer
-      );
+      let contract;
+      if (collectionType === 'erc721') {
+        contract = new ethers.Contract(
+          fetchedCollection,
+          contractABIs.erc721Prize,
+          signer
+        );
+      } else if (collectionType === 'erc1155') {
+        contract = new ethers.Contract(
+          fetchedCollection,
+          contractABIs.erc1155Prize,
+          signer
+        );
+      }
       
       // Check if the current user is the owner
       const owner = await contract.owner();
@@ -163,12 +226,22 @@ const MinterApprovalComponent = () => {
       }
 
       let tx;
-      if (isLocked) {
-        console.log('Attempting to unlock minter approval...');
-        tx = await contract.unlockMinterApproval();
-      } else {
-        console.log('Attempting to lock minter approval...');
-        tx = await contract.lockMinterApproval();
+      if (collectionType === 'erc721') {
+        if (isLocked) {
+          console.log('Attempting to unlock minter approval...');
+          tx = await contract.unlockMinterApproval();
+        } else {
+          console.log('Attempting to lock minter approval...');
+          tx = await contract.lockMinterApproval();
+        }
+      } else if (collectionType === 'erc1155') {
+        if (isLocked) {
+          console.log('Attempting to unlock minter approval...');
+          tx = await contract.unlockMinterApproval();
+        } else {
+          console.log('Attempting to lock minter approval...');
+          tx = await contract.lockMinterApproval();
+        }
       }
       
       console.log('Transaction sent:', tx.hash);
@@ -219,7 +292,7 @@ const MinterApprovalComponent = () => {
           Minter Approval Management
         </CardTitle>
         <CardDescription>
-          Manage minter for your ERC721 prize collections. Control who can mint tokens from your collections.
+          Manage and control minter approvals for your prize collections.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

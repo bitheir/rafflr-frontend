@@ -7,7 +7,6 @@ import { Toaster } from './components/ui/sonner';
 import LandingPage from './pages/LandingPage';
 import ProfilePage from './pages/ProfilePage';
 import CreateRafflePage from './pages/CreateRafflePage';
-import DeployERC1155CollectionPage from './pages/DeployERC1155CollectionPage';
 import RaffleDetailPage from './pages/RaffleDetailPage';
 import WhitelistRafflePage from './pages/WhitelistRafflePage';
 import NFTPrizedRafflePage from './pages/NFTPrizedRafflePage';
@@ -34,7 +33,6 @@ function App() {
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/create-raffle" element={<CreateRafflePage />} />
-                  <Route path="/deploy-erc1155-collection" element={<DeployERC1155CollectionPage />} />
                   <Route path="/raffle/:raffleAddress" element={<RaffleDetailPage />} />
                   <Route path="/whitelist-raffles" element={<WhitelistRafflePage />} />
                   <Route path="/nft-prized-raffles" element={<NFTPrizedRafflePage />} />
