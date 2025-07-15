@@ -33,12 +33,13 @@ export const categorizeRaffles = (raffles) => {
     raffle.stateNum !== 4 // Not completed or all prizes claimed
   );
   
+  // Corrected: Drawing is stateNum === 3
   const drawing = raffles.filter(raffle => 
-    raffle.stateNum === 2 && !isDurationElapsed(raffle)
+    raffle.stateNum === 3 && !isDurationElapsed(raffle)
   );
   
   const completed = raffles.filter(raffle => 
-    (raffle.stateNum === 3 || raffle.stateNum === 4) // Completed or all prizes claimed
+    (raffle.stateNum === 4 || raffle.stateNum === 7) // Completed or all prizes claimed
   );
 
   return { pending, active, ended, drawing, completed };

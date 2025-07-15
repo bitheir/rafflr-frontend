@@ -339,27 +339,36 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
           </div>
 
         {/* Button/message area */}
-        {(raffle.stateNum === 4 || raffle.stateNum === 7) && (canClaimPrize() || canClaimRefund()) ? (
-          <div className="flex flex-col sm:flex-row gap-2 w-full">
-            {canClaimPrize() && (
-              <button
-                onClick={handleClaimPrize}
-                disabled={claimingPrize || !connected}
-                className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-6 py-3 rounded-md hover:from-yellow-600 hover:to-orange-700 transition-colors disabled:opacity-50"
-              >
-                {claimingPrize ? (isMintableERC721 ? 'Minting...' : 'Claiming...') : (isMintableERC721 ? 'Mint Prize' : 'Claim Prize')}
-              </button>
-            )}
-            {canClaimRefund() && (
-              <button
-                onClick={handleClaimRefund}
-                disabled={claimingRefund || !connected}
-                className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white px-6 py-3 rounded-md hover:from-green-600 hover:to-teal-700 transition-colors disabled:opacity-50"
-              >
-                {claimingRefund ? 'Claiming...' : 'Claim Refund'}
-              </button>
-            )}
-          </div>
+        {(raffle.stateNum === 4 || raffle.stateNum === 7) ? (
+          (canClaimPrize() || canClaimRefund()) ? (
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
+              {canClaimPrize() && (
+                <button
+                  onClick={handleClaimPrize}
+                  disabled={claimingPrize || !connected}
+                  className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-6 py-3 rounded-md hover:from-yellow-600 hover:to-orange-700 transition-colors disabled:opacity-50"
+                >
+                  {claimingPrize ? (isMintableERC721 ? 'Minting...' : 'Claiming...') : (isMintableERC721 ? 'Mint Prize' : 'Claim Prize')}
+                </button>
+              )}
+              {canClaimRefund() && (
+                <button
+                  onClick={handleClaimRefund}
+                  disabled={claimingRefund || !connected}
+                  className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white px-6 py-3 rounded-md hover:from-green-600 hover:to-teal-700 transition-colors disabled:opacity-50"
+                >
+                  {claimingRefund ? 'Claiming...' : 'Claim Refund'}
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              disabled
+              className="w-full bg-gray-400 text-white px-6 py-3 rounded-md opacity-60 cursor-not-allowed flex items-center justify-center gap-2 text-lg"
+            >
+              Sold Out
+            </button>
+          )
         ) : (
           // All other main action buttons (Activate, Purchase, Sold Out, etc.)
           <>
