@@ -2137,14 +2137,16 @@ const CreateRafflePage = () => {
             Create an on-chain raffle for your community
           </h1>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8 max-w-7xl mx-auto mt-16">
+        <div className="grid grid-cols-1 lg:grid-cols-[315px_1fr] gap-8 max-w-7xl mx-auto mt-16">
           <div className="lg:col-span-1 flex flex-col gap-6 items-start">
-            <div className="w-full max-w-[420px]">
+            <div className="w-full max-w-[315px]">
             {renderFilterCard()}
             </div>
           </div>
           <div className="lg:col-span-1">
-            {renderForm()}
+            <div className="w-full max-w-4xl mx-auto">
+              {renderForm()}
+            </div>
           </div>
         </div>
       </div>
