@@ -1,6 +1,6 @@
 const { ethers } = require("hardhat");
 
-const RAFFLE_DEPLOYER_ADDRESS = "0x4126dB3c09a9Aa656914f28726ff52628fE6054B";
+const RAFFLE_DEPLOYER_ADDRESS = "0xc0C162cbBD3bC92e166786E831b19c6329552331";
 
 async function main() {
     const [creator] = await ethers.getSigners();

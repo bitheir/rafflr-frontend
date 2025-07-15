@@ -530,31 +530,31 @@ const LandingPage = () => {
         aria-hidden="true"
       />
       <PageContainer className="py-4 pb-16" style={{ position: 'relative', zIndex: 1 }}>
-        <div className="mb-4 text-center">
-          <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
-          <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-            Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
+      <div className="mb-4 text-center">
+        <h1 className="text-4xl font-bold mb-4">Fairness and Transparency, On-Chain</h1>
+        <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+          Rafflhub hosts decentralized raffles where every draw is public, auditable, and powered by Chainlink VRF. Enter for your chance to win!
+        </p>
+      </div>
+
+      <div className="mt-16">
+        <RaffleSection title="Active Raffles" raffles={active} icon={Clock} stateKey="active" />
+        <RaffleSection title="Pending Raffles" raffles={pending} icon={Users} stateKey="pending" />
+        <RaffleSection title="Drawing Phase" raffles={drawing} icon={Trophy} stateKey="drawing" />
+        <RaffleSection title="Ended Raffles" raffles={ended} icon={Clock} stateKey="ended" />
+        <RaffleSection title="Completed Raffles" raffles={completed} icon={Ticket} stateKey="completed" />
+      </div>
+
+      {raffles.length === 0 && !loading && !error && (
+        <div className="text-center py-16">
+          <Trophy className="h-16 w-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
+          <h3 className="text-2xl font-semibold mb-2">No Raffles Available</h3>
+          <p className="text-gray-500 dark:text-gray-400">
+            There are currently no raffles available on the blockchain. Check back later or create your own!
           </p>
         </div>
-
-        <div className="mt-16">
-          <RaffleSection title="Active Raffles" raffles={active} icon={Clock} stateKey="active" />
-          <RaffleSection title="Pending Raffles" raffles={pending} icon={Users} stateKey="pending" />
-          <RaffleSection title="Drawing Phase" raffles={drawing} icon={Trophy} stateKey="drawing" />
-          <RaffleSection title="Ended Raffles" raffles={ended} icon={Clock} stateKey="ended" />
-          <RaffleSection title="Completed Raffles" raffles={completed} icon={Ticket} stateKey="completed" />
-        </div>
-
-        {raffles.length === 0 && !loading && !error && (
-          <div className="text-center py-16">
-            <Trophy className="h-16 w-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
-            <h3 className="text-2xl font-semibold mb-2">No Raffles Available</h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              There are currently no raffles available on the blockchain. Check back later or create your own!
-            </p>
-          </div>
-        )}
-      </PageContainer>
+      )}
+    </PageContainer>
     </>
   );
 };

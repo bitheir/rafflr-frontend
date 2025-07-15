@@ -93,7 +93,10 @@ function ERC1155DropForm() {
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0
+        ethPrizeAmount: 0,
+        revealType: 0,
+        unrevealedBaseURI: '',
+        revealTime: 0
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
@@ -275,8 +278,9 @@ function ERC1155DropForm() {
   );
 }
 
+// --- PrizedRaffleForm ---
 const PrizedRaffleForm = () => {
-  const { connected, address } = useWallet();
+  const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
   const [socialTasks, setSocialTasks] = useState([]);
@@ -314,13 +318,13 @@ const PrizedRaffleForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!connected || !contracts.raffleDeployer) {
+    if (!connected || !contracts.raffleDeployer || !provider) {
       toast.error('Please connect your wallet and ensure contracts are configured');
       return;
     }
-
     setLoading(true);
     try {
+      const signer = provider.getSigner();
       const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
       const duration = parseInt(formData.duration) * 60; // Convert minutes to seconds
       const customTicketPrice = formData.customTicketPrice ? 
@@ -354,7 +358,10 @@ const PrizedRaffleForm = () => {
           maxSupply: parseInt(formData.maxSupply || formData.winnersCount),
           erc20PrizeToken: ethers.constants.AddressZero,
           erc20PrizeAmount: 0,
-          ethPrizeAmount: 0
+          ethPrizeAmount: 0,
+          revealType: 0,
+          unrevealedBaseURI: '',
+          revealTime: 0
         };
       } else {
         // Existing collection (ERC721 or ERC1155)
@@ -382,13 +389,16 @@ const PrizedRaffleForm = () => {
           maxSupply: 0,
           erc20PrizeToken: ethers.constants.AddressZero,
           erc20PrizeAmount: 0,
-          ethPrizeAmount: 0
+          ethPrizeAmount: 0,
+          revealType: 0,
+          unrevealedBaseURI: '',
+          revealTime: 0
         };
       }
 
       result = { success: false };
       try {
-        const tx = await contracts.raffleDeployer.createRaffle(params);
+        const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
         const receipt = await tx.wait();
         result = { success: true, receipt, hash: tx.hash };
       } catch (error) {
@@ -786,26 +796,38 @@ const NonPrizedRaffleForm = () => {
       const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
       const duration = parseInt(formData.duration) * 60; // Convert minutes to seconds
 
-      const result = await executeTransaction(
-        contracts.raffleDeployer.createRaffle,
-        formData.name,
+      const params = {
+        name: formData.name,
         startTime,
         duration,
-        parseInt(formData.ticketLimit),
-        parseInt(formData.winnersCount),
-        parseInt(formData.maxTicketsPerParticipant),
-        false, // isPrized
-        0, // customTicketPrice
-        false, // useMintableWorkflow
-        ethers.constants.AddressZero, // prizeCollection
-        0, // standard
-        0, // prizeTokenId
-        0, // amountPerWinner
-        '', '', '', // collection creation params
-        address, // creator
-        0,
-        ethers.constants.AddressZero,
-        0
+        ticketLimit: parseInt(formData.ticketLimit),
+        winnersCount: parseInt(formData.winnersCount),
+        maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+        isPrized: false,
+        customTicketPrice: 0,
+        erc721Drop: false,
+        erc1155Drop: false,
+        prizeCollection: ethers.constants.AddressZero,
+        standard: 0,
+        prizeTokenId: 0,
+        amountPerWinner: 0,
+        collectionName: '',
+        collectionSymbol: '',
+        collectionBaseURI: '',
+        creator: address,
+        royaltyPercentage: 0,
+        royaltyRecipient: ethers.constants.AddressZero,
+        maxSupply: 0,
+        erc20PrizeToken: ethers.constants.AddressZero,
+        erc20PrizeAmount: 0,
+        ethPrizeAmount: 0,
+        revealType: 0,
+        unrevealedBaseURI: '',
+        revealTime: 0
+      };
+      const result = await executeTransaction(
+        contracts.raffleDeployer.createRaffle,
+        params
       );
 
       if (result.success) {
@@ -1006,7 +1028,10 @@ const WhitelistRaffleForm = () => {
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0
+        ethPrizeAmount: 0,
+        revealType: 0,
+        unrevealedBaseURI: '',
+        revealTime: 0
       };
       let result = { success: false };
       try {
@@ -1150,7 +1175,7 @@ const WhitelistRaffleForm = () => {
 };
 
 const NewERC721DropForm = () => {
-  const { connected, address } = useWallet();
+  const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
   const [socialTasks, setSocialTasks] = useState([]);
@@ -1168,6 +1193,10 @@ const NewERC721DropForm = () => {
     baseURI: '',
     maxSupply: '',
     royaltyPercentage: '',
+    // Reveal feature fields
+    revealType: '0', // 0 = Instant, 1 = Manual, 2 = Scheduled
+    unrevealedBaseURI: '',
+    revealTime: '',
   });
 
   const handleChange = (field, value) => {
@@ -1180,20 +1209,28 @@ const NewERC721DropForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!connected || !contracts.raffleDeployer) {
+    if (!connected || !contracts.raffleDeployer || !provider) {
       toast.error('Please connect your wallet and ensure contracts are configured');
       return;
     }
     setLoading(true);
     try {
+      const signer = provider.getSigner();
       const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
       const duration = parseInt(formData.duration) * 60; // Convert minutes to seconds
-      const customTicketPrice = formData.customTicketPrice ? ethers.utils.parseEther(formData.customTicketPrice) : 0;
-      const maxSupply = formData.maxSupply ? parseInt(formData.maxSupply) : parseInt(formData.winnersCount);
-      // Multiply by 100 to match contract expectations (e.g., 5% -> 500)
-      const royaltyPercentage = formData.royaltyPercentage ? parseInt(formData.royaltyPercentage) * 100 : 0;
-      const prizeCollection = ethers.constants.AddressZero;
-      // Build struct object
+      const customTicketPrice = formData.customTicketPrice ? 
+        ethers.utils.parseEther(formData.customTicketPrice) : 0;
+      let revealType = parseInt(formData.revealType);
+      let unrevealedBaseURI = formData.unrevealedBaseURI;
+      let revealTime = 0;
+      if (revealType === 2) {
+        // Scheduled
+        revealTime = Math.floor(new Date(formData.revealTime).getTime() / 1000);
+      }
+      if (revealType !== 2) {
+        unrevealedBaseURI = '';
+        revealTime = 0;
+      }
       const params = {
         name: formData.name,
         startTime,
@@ -1202,9 +1239,10 @@ const NewERC721DropForm = () => {
         winnersCount: parseInt(formData.winnersCount),
         maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
         isPrized: true,
-        customTicketPrice,
+        customTicketPrice: customTicketPrice,
         erc721Drop: false,
-        prizeCollection,
+        erc1155Drop: false,
+        prizeCollection: ethers.constants.AddressZero,
         standard: 0, // ERC721
         prizeTokenId: 0,
         amountPerWinner: 1,
@@ -1212,23 +1250,20 @@ const NewERC721DropForm = () => {
         collectionSymbol: formData.collectionSymbol,
         collectionBaseURI: formData.baseURI,
         creator: address,
-        royaltyPercentage,
-        royaltyRecipient: address,
-        maxSupply,
+        royaltyPercentage: parseInt(formData.royaltyPercentage || '0'),
+        royaltyRecipient: ethers.constants.AddressZero,
+        maxSupply: parseInt(formData.maxSupply || formData.winnersCount),
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0
+        ethPrizeAmount: 0,
+        // Reveal feature
+        revealType: revealType,
+        unrevealedBaseURI: unrevealedBaseURI,
+        revealTime: revealTime
       };
-      let result = { success: false };
-      try {
-        const tx = await contracts.raffleDeployer.createRaffle(params);
-        const receipt = await tx.wait();
-        result = { success: true, receipt, hash: tx.hash };
-      } catch (error) {
-        result = { success: false, error: error.message };
-      }
-      if (result.success) {
-        toast.success('New ERC721 Collection raffle created successfully!');
+      const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
+      await tx.wait();
+        toast.success('ERC721 Collection raffle created successfully!');
         setFormData({
           name: '',
           startTime: '',
@@ -1242,10 +1277,10 @@ const NewERC721DropForm = () => {
           baseURI: '',
           maxSupply: '',
           royaltyPercentage: '',
+          revealType: '0',
+          unrevealedBaseURI: '',
+          revealTime: '',
         });
-      } else {
-        throw new Error(result.error);
-      }
     } catch (error) {
       console.error('Error creating raffle:', error);
       toast.error(extractRevertReason(error));
@@ -1322,19 +1357,17 @@ const NewERC721DropForm = () => {
               required
             />
           </div>
-        </div>
-        <div>
-          <label className="block text-base font-medium mb-2">Custom Ticket Price (ETH)</label>
-          <input
-            type="number"
-            step="0.001"
-            value={formData.customTicketPrice || ''}
-            onChange={(e) => handleChange('customTicketPrice', e.target.value)}
-            className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-            placeholder="Leave empty to use protocol default"
-          />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/20 rounded-xl p-4">
+          <div>
+            <label className="block text-base font-medium mb-2">Custom Ticket Price (ETH)</label>
+            <input
+              type="number"
+              step="0.001"
+              value={formData.customTicketPrice || ''}
+              onChange={(e) => handleChange('customTicketPrice', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              placeholder="Leave empty to use protocol default"
+            />
+          </div>
           <div>
             <label className="block text-base font-medium mb-2">Collection Name</label>
             <input
@@ -1375,17 +1408,51 @@ const NewERC721DropForm = () => {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Royalty Percentage</label>
+            <label className="block text-base font-medium mb-2">Royalty Percentage (%)</label>
             <input
               type="number"
-              min="0"
-              max="10"
               value={formData.royaltyPercentage || ''}
               onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-              placeholder="0-10%"
             />
           </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Reveal Type</label>
+            <select
+              value={formData.revealType}
+              onChange={e => handleChange('revealType', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            >
+              <option value="0">Instant Reveal</option>
+              <option value="1">Manual Reveal</option>
+              <option value="2">Scheduled Reveal</option>
+            </select>
+          </div>
+          {(formData.revealType === '1' || formData.revealType === '2') && (
+            <div>
+              <label className="block text-base font-medium mb-2">Unrevealed Base URI</label>
+              <input
+                type="url"
+                value={formData.unrevealedBaseURI || ''}
+                onChange={e => handleChange('unrevealedBaseURI', e.target.value)}
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                required={formData.revealType === '1' || formData.revealType === '2'}
+              />
+            </div>
+          )}
+          {formData.revealType === '2' && (
+            <div>
+              <label className="block text-base font-medium mb-2">Reveal Time</label>
+              <input
+                type="datetime-local"
+                value={formData.revealTime || ''}
+                onChange={e => handleChange('revealTime', e.target.value)}
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                required={formData.revealType === '2'}
+              />
+            </div>
+          )}
         </div>
         
         {/* Social Media Tasks Toggle */}
@@ -1428,10 +1495,10 @@ const NewERC721DropForm = () => {
       </form>
     </div>
   );
-};
+}
 
 function ExistingERC721DropForm() {
-  const { connected, address } = useWallet();
+  const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
   const [socialTasks, setSocialTasks] = useState([]);
@@ -1455,31 +1522,18 @@ function ExistingERC721DropForm() {
     setSocialTasks(tasks);
   };
 
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.name) newErrors.name = 'Required';
-    if (!formData.collection || !/^0x[a-fA-F0-9]{40}$/.test(formData.collection)) newErrors.collection = 'Invalid address';
-    if (!formData.startTime) newErrors.startTime = 'Required';
-    if (!formData.duration || formData.duration < 1) newErrors.duration = 'Must be at least 1 minute';
-    if (!formData.ticketLimit || formData.ticketLimit < 1) newErrors.ticketLimit = 'Must be at least 1';
-    if (!formData.winnersCount || formData.winnersCount < 1) newErrors.winnersCount = 'Must be at least 1';
-    if (!formData.maxTicketsPerUser || formData.maxTicketsPerUser < 1) newErrors.maxTicketsPerUser = 'Must be at least 1';
-    if (formData.ticketPrice && parseFloat(formData.ticketPrice) < 0.00000001) newErrors.ticketPrice = 'Must be at least 0.00000001 ETH';
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
-    if (!connected || !contracts.raffleDeployer) {
+    if (!connected || !contracts.raffleDeployer || !provider) {
       toast.error('Please connect your wallet and ensure contracts are configured');
       return;
     }
     setLoading(true);
     try {
+      const signer = provider.getSigner();
       const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
-      const duration = parseInt(formData.duration) * 60;
-      const ticketPrice = formData.ticketPrice ? ethers.utils.parseEther(formData.ticketPrice) : 0;
+      const duration = parseInt(formData.duration) * 60; // Convert minutes to seconds
+      const customTicketPrice = formData.ticketPrice ? ethers.utils.parseEther(formData.ticketPrice) : 0;
       const params = {
         name: formData.name,
         startTime,
@@ -1488,9 +1542,10 @@ function ExistingERC721DropForm() {
         winnersCount: parseInt(formData.winnersCount),
         maxTicketsPerParticipant: parseInt(formData.maxTicketsPerUser),
         isPrized: true,
-        customTicketPrice: ticketPrice,
+        customTicketPrice: customTicketPrice,
         erc721Drop: true,
-        prizeCollection: formData.collection.trim(),
+        erc1155Drop: false,
+        prizeCollection: formData.collection,
         standard: 0, // ERC721
         prizeTokenId: 0,
         amountPerWinner: 1,
@@ -1503,31 +1558,24 @@ function ExistingERC721DropForm() {
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0
+        ethPrizeAmount: 0,
+        revealType: 0,
+        unrevealedBaseURI: '',
+        revealTime: 0
       };
-      let result = { success: false };
-      try {
-        const tx = await contracts.raffleDeployer.createRaffle(params);
-        const receipt = await tx.wait();
-        result = { success: true, receipt, hash: tx.hash };
-      } catch (error) {
-        result = { success: false, error: error.message };
-      }
-      if (result.success) {
-        toast.success('Existing ERC721 Collection raffle created successfully!');
-        setFormData({
-          name: '',
-          collection: '',
-          startTime: '',
-          duration: '',
-          ticketLimit: '',
-          winnersCount: '',
-          maxTicketsPerUser: '',
-          ticketPrice: '',
-        });
-      } else {
-        throw new Error(result.error);
-      }
+      const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
+      await tx.wait();
+      toast.success('Existing ERC721 Collection raffle created successfully!');
+      setFormData({
+        name: '',
+        collection: '',
+        startTime: '',
+        duration: '',
+        ticketLimit: '',
+        winnersCount: '',
+        maxTicketsPerUser: '',
+        ticketPrice: '',
+      });
     } catch (error) {
       console.error('Error creating raffle:', error);
       toast.error(extractRevertReason(error));
@@ -1673,14 +1721,255 @@ function ExistingERC721DropForm() {
   );
 }
 
+// --- Existing ERC1155 Collection Drop Form ---
+function ExistingERC1155DropForm() {
+  const { connected, address, provider } = useWallet();
+  const { contracts } = useContract();
+  const [loading, setLoading] = useState(false);
+  const [socialTasks, setSocialTasks] = useState([]);
+  const [showSocialTasks, setShowSocialTasks] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    collectionAddress: '',
+    tokenId: '',
+    amountPerWinner: '',
+    startTime: '',
+    duration: '',
+    ticketLimit: '',
+    winnersCount: '',
+    maxTicketsPerParticipant: '',
+    ticketPrice: '',
+  });
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSocialTasksChange = (tasks) => {
+    setSocialTasks(tasks);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!connected || !contracts.raffleDeployer || !provider) {
+      toast.error('Please connect your wallet and ensure contracts are configured');
+      return;
+    }
+    setLoading(true);
+    try {
+      const signer = provider.getSigner();
+      const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
+      const duration = parseInt(formData.duration) * 60; // Convert minutes to seconds
+      const customTicketPrice = formData.ticketPrice ? ethers.utils.parseEther(formData.ticketPrice) : 0;
+      const params = {
+        name: formData.name,
+        startTime,
+        duration,
+        ticketLimit: parseInt(formData.ticketLimit),
+        winnersCount: parseInt(formData.winnersCount),
+        maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+        isPrized: true,
+        customTicketPrice: customTicketPrice,
+        erc721Drop: false,
+        erc1155Drop: true,
+        prizeCollection: formData.collectionAddress,
+        standard: 1, // ERC1155
+        prizeTokenId: parseInt(formData.tokenId),
+        amountPerWinner: parseInt(formData.amountPerWinner),
+        collectionName: '',
+        collectionSymbol: '',
+        collectionBaseURI: '',
+        creator: address,
+        royaltyPercentage: 0,
+        royaltyRecipient: ethers.constants.AddressZero,
+        maxSupply: 0,
+        erc20PrizeToken: ethers.constants.AddressZero,
+        erc20PrizeAmount: 0,
+        ethPrizeAmount: 0,
+        revealType: 0,
+        unrevealedBaseURI: '',
+        revealTime: 0
+      };
+      const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
+      await tx.wait();
+      toast.success('Existing ERC1155 Collection raffle created successfully!');
+      setFormData({
+        name: '',
+        collectionAddress: '',
+        tokenId: '',
+        amountPerWinner: '',
+        startTime: '',
+        duration: '',
+        ticketLimit: '',
+        winnersCount: '',
+        maxTicketsPerParticipant: '',
+        ticketPrice: '',
+      });
+    } catch (error) {
+      console.error('Error creating raffle:', error);
+      toast.error(error.message || 'Error creating raffle');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
+      <div className="flex items-center gap-3 mb-5">
+        <Package className="h-5 w-5" />
+        <h3 className="text-xl font-semibold">Create Raffle (Existing ERC1155 Collection)</h3>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-base font-medium mb-2">Raffle Name</label>
+            <input
+              type="text"
+              value={formData.name || ''}
+              onChange={e => handleChange('name', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Prize Collection Address</label>
+            <input
+              type="text"
+              value={formData.collectionAddress || ''}
+              onChange={e => handleChange('collectionAddress', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background font-mono"
+              placeholder="0x..."
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Prize Token ID</label>
+            <input
+              type="number"
+              min="0"
+              value={formData.tokenId || ''}
+              onChange={e => handleChange('tokenId', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Amount Per Winner</label>
+            <input
+              type="number"
+              min="1"
+              value={formData.amountPerWinner || ''}
+              onChange={e => handleChange('amountPerWinner', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Start Time</label>
+            <input
+              type="datetime-local"
+              value={formData.startTime || ''}
+              onChange={e => handleChange('startTime', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Duration (minutes)</label>
+            <input
+              type="number"
+              value={formData.duration || ''}
+              onChange={e => handleChange('duration', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Ticket Limit</label>
+            <input
+              type="number"
+              value={formData.ticketLimit || ''}
+              onChange={e => handleChange('ticketLimit', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Winners Count</label>
+            <input
+              type="number"
+              value={formData.winnersCount || ''}
+              onChange={e => handleChange('winnersCount', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
+            <input
+              type="number"
+              value={formData.maxTicketsPerParticipant || ''}
+              onChange={e => handleChange('maxTicketsPerParticipant', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Custom Ticket Price (ETH)</label>
+            <input
+              type="number"
+              step="0.001"
+              value={formData.ticketPrice || ''}
+              onChange={e => handleChange('ticketPrice', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              placeholder="Leave empty to use protocol default"
+            />
+          </div>
+        </div>
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="enable-social-tasks"
+            checked={showSocialTasks}
+            onCheckedChange={setShowSocialTasks}
+          />
+          <Label htmlFor="enable-social-tasks" className="text-base font-medium">
+            Enable social media tasks for this raffle
+          </Label>
+        </div>
+        {showSocialTasks && (
+          <div className="mt-8">
+            <SocialTaskCreator
+              onTasksChange={handleSocialTasksChange}
+              initialTasks={socialTasks}
+              visible={showSocialTasks}
+              onSubmit={(tasks) => {
+                toast.info('Tasks to save: ' + JSON.stringify(tasks, null, 2));
+              }}
+            />
+          </div>
+        )}
+        <div className="flex gap-4">
+          <Button
+            type="submit"
+            disabled={loading || !connected}
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+          >
+            {loading ? 'Creating...' : 'Create Raffle'}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 // --- Update FILTERS ---
 const FILTERS = {
   raffleType: ['Whitelist/Allowlist', 'NFTDrop', 'Lucky Sale/NFT Giveaway', 'ETH Giveaway', 'ERC20 Token Giveaway'],
   nftStandard: ['ERC721', 'ERC1155'],
-  erc721Source: ['New ERC721 Collection', 'Existing ERC721 Collection'], // Removed 'Escrowed ERC721'
+  erc721Source: ['New ERC721 Collection', 'Existing ERC721 Collection'],
   escrowedSource: ['Internal NFT Prize', 'External NFT Prize'],
   luckySaleSource: ['Internal NFT Prize', 'External NFT Prize'],
-  erc1155Source: ['Existing ERC1155 Collection', 'Escrowed ERC1155'],
+  erc1155Source: ['New ERC1155 Collection', 'Existing ERC1155 Collection'],
 };
 
 const CreateRafflePage = () => {
@@ -1695,7 +1984,7 @@ const CreateRafflePage = () => {
   const [erc721EscrowedSource, setErc721EscrowedSource] = useState('Internal NFT Prize');
   const [erc1155EscrowedSource, setErc1155EscrowedSource] = useState('Internal NFT Prize');
   const [luckySaleSource, setLuckySaleSource] = useState('Internal NFT Prize');
-  const [erc1155Source, setErc1155Source] = useState('Existing ERC1155 Collection');
+  const [erc1155Source, setErc1155Source] = useState('New ERC1155 Collection');
   // Track collection address for existing ERC721
   const [existingCollectionAddress, setExistingCollectionAddress] = useState('');
 
@@ -1766,6 +2055,20 @@ const CreateRafflePage = () => {
               </select>
             </div>
           )}
+          {nftStandard === 'ERC1155' && (
+            <div className="flex flex-col gap-2">
+              <label className="font-semibold text-sm whitespace-nowrap">ERC1155 Source</label>
+              <select
+                className="px-2 py-1 rounded border bg-white text-black dark:bg-gray-900 dark:text-white text-sm"
+                value={erc1155Source}
+                onChange={e => setErc1155Source(e.target.value)}
+              >
+                {FILTERS.erc1155Source.map(src => (
+                  <option key={src} value={src}>{src}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </>
       )}
       {/* Lucky Sale subfilters */}
@@ -1795,7 +2098,9 @@ const CreateRafflePage = () => {
         if (erc721Source === 'Existing ERC721 Collection') return <ExistingERC721DropForm collectionAddress={existingCollectionAddress} setCollectionAddress={setExistingCollectionAddress} />;
       }
       if (nftStandard === 'ERC1155') {
-        return <ERC1155DropForm />;
+        if (erc1155Source === 'New ERC1155 Collection') return <NewERC1155DropForm />;
+        if (erc1155Source === 'Existing ERC1155 Collection') return <ExistingERC1155DropForm />;
+        // Escrowed ERC1155 can be handled later
       }
     }
     if (raffleType === 'Lucky Sale/NFT Giveaway') {
@@ -1832,14 +2137,6 @@ const CreateRafflePage = () => {
             <div className="w-full max-w-[420px]">
             {renderFilterCard()}
             </div>
-            {raffleType === 'NFTDrop' && nftStandard === 'ERC1155' && (
-              <Link
-                to="/deploy-erc1155-collection"
-                className="block w-full max-w-[420px] mt-2 bg-gradient-to-r from-green-500 to-teal-600 text-white px-5 py-3 rounded-lg hover:from-green-600 hover:to-teal-700 transition-colors flex items-center justify-center gap-2 text-base h-12"
-              >
-                Deploy ERC1155 Collection
-              </Link>
-            )}
           </div>
           <div className="lg:col-span-1">
             {renderForm()}
@@ -1930,7 +2227,10 @@ function LuckySaleERC721Form() {
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0
+        ethPrizeAmount: 0,
+        revealType: 0,
+        unrevealedBaseURI: '',
+        revealTime: 0
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
@@ -2181,7 +2481,10 @@ function LuckySaleERC1155Form() {
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
-        ethPrizeAmount: 0
+        ethPrizeAmount: 0,
+        revealType: 0,
+        unrevealedBaseURI: '',
+        revealTime: 0
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
@@ -2377,7 +2680,7 @@ function LuckySaleERC1155Form() {
 
 // Add ETHGiveawayForm
 function ETHGiveawayForm() {
-  const { connected, address } = useWallet();
+  const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
   const [loading, setLoading] = useState(false);
   const [socialTasks, setSocialTasks] = useState([]);
@@ -2402,12 +2705,13 @@ function ETHGiveawayForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!connected || !contracts.raffleDeployer) {
+    if (!connected || !contracts.raffleDeployer || !provider) {
       toast.error('Please connect your wallet and ensure contracts are configured');
       return;
     }
     setLoading(true);
     try {
+      const signer = provider.getSigner();
       const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
       const duration = parseInt(formData.duration) * 60;
       const ethAmount = formData.ethAmount ? ethers.utils.parseEther(formData.ethAmount) : 0;
@@ -2434,11 +2738,14 @@ function ETHGiveawayForm() {
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: ethers.BigNumber.from(0),
-        ethPrizeAmount: ethAmount
+        ethPrizeAmount: ethAmount,
+        revealType: 0,
+        unrevealedBaseURI: '',
+        revealTime: 0
       };
       let result = { success: false };
       try {
-        const tx = await contracts.raffleDeployer.createRaffle(params);
+        const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params, { value: ethAmount });
         const receipt = await tx.wait();
         result = { success: true, receipt, hash: tx.hash };
       } catch (error) {
@@ -2671,7 +2978,10 @@ function ERC20GiveawayForm() {
         maxSupply: 0,
         erc20PrizeToken: formData.tokenAddress,
         erc20PrizeAmount: tokenAmount,
-        ethPrizeAmount: ethers.BigNumber.from(0)
+        ethPrizeAmount: ethers.BigNumber.from(0),
+        revealType: 0,
+        unrevealedBaseURI: '',
+        revealTime: 0
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
@@ -2917,6 +3227,347 @@ function extractRevertReason(error) {
   const match = msg.match(/execution reverted:?\s*([^\n]*)/i);
   if (match && match[1]) return match[1].trim();
   return msg;
+}
+
+// --- New ERC1155 Collection Drop Form ---
+function NewERC1155DropForm() {
+  const { connected, address, provider } = useWallet();
+  const { contracts } = useContract();
+  const [loading, setLoading] = useState(false);
+  const [socialTasks, setSocialTasks] = useState([]);
+  const [showSocialTasks, setShowSocialTasks] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    startTime: '',
+    duration: '',
+    ticketLimit: '',
+    winnersCount: '',
+    maxTicketsPerParticipant: '',
+    customTicketPrice: '',
+    collectionName: '',
+    collectionSymbol: '',
+    baseURI: '',
+    maxSupply: '',
+    royaltyPercentage: '',
+    prizeTokenId: '1',
+    amountPerWinner: '',
+    // Reveal feature fields
+    revealType: '0', // 0 = Instant, 1 = Manual, 2 = Scheduled
+    unrevealedBaseURI: '',
+    revealTime: '',
+  });
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSocialTasksChange = (tasks) => {
+    setSocialTasks(tasks);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!connected || !contracts.raffleDeployer || !provider) {
+      toast.error('Please connect your wallet and ensure contracts are configured');
+      return;
+    }
+    setLoading(true);
+    try {
+      const signer = provider.getSigner();
+      const startTime = Math.floor(new Date(formData.startTime).getTime() / 1000);
+      const duration = parseInt(formData.duration) * 60; // Convert minutes to seconds
+      const customTicketPrice = formData.customTicketPrice ? 
+        ethers.utils.parseEther(formData.customTicketPrice) : 0;
+      let revealType = parseInt(formData.revealType);
+      let unrevealedBaseURI = formData.unrevealedBaseURI;
+      let revealTime = 0;
+      if (revealType === 2) {
+        // Scheduled
+        revealTime = Math.floor(new Date(formData.revealTime).getTime() / 1000);
+      }
+      if (revealType !== 2) {
+        unrevealedBaseURI = '';
+        revealTime = 0;
+      }
+      const params = {
+        name: formData.name,
+        startTime,
+        duration,
+        ticketLimit: parseInt(formData.ticketLimit),
+        winnersCount: parseInt(formData.winnersCount),
+        maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+        isPrized: true,
+        customTicketPrice: customTicketPrice,
+        erc721Drop: false,
+        erc1155Drop: false,
+        prizeCollection: ethers.constants.AddressZero,
+        standard: 1, // ERC1155
+        prizeTokenId: parseInt(formData.prizeTokenId),
+        amountPerWinner: parseInt(formData.amountPerWinner),
+        collectionName: formData.collectionName,
+        collectionSymbol: formData.collectionSymbol,
+        collectionBaseURI: formData.baseURI,
+        creator: address,
+        royaltyPercentage: parseInt(formData.royaltyPercentage || '0'),
+        royaltyRecipient: ethers.constants.AddressZero,
+        maxSupply: parseInt(formData.maxSupply || formData.winnersCount),
+        erc20PrizeToken: ethers.constants.AddressZero,
+        erc20PrizeAmount: 0,
+        ethPrizeAmount: 0,
+        // Reveal feature
+        revealType: revealType,
+        unrevealedBaseURI: unrevealedBaseURI,
+        revealTime: revealTime
+      };
+      const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
+      await tx.wait();
+      toast.success('New ERC1155 Collection raffle created successfully!');
+      setFormData({
+        name: '',
+        startTime: '',
+        duration: '',
+        ticketLimit: '',
+        winnersCount: '',
+        maxTicketsPerParticipant: '',
+        customTicketPrice: '',
+        collectionName: '',
+        collectionSymbol: '',
+        baseURI: '',
+        maxSupply: '',
+        royaltyPercentage: '',
+        prizeTokenId: '1',
+        amountPerWinner: '',
+        revealType: '0',
+        unrevealedBaseURI: '',
+        revealTime: '',
+      });
+    } catch (error) {
+      console.error('Error creating raffle:', error);
+      toast.error(error.message || 'Error creating raffle');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-6 max-w-3xl mx-auto">
+      <div className="flex items-center gap-3 mb-5">
+        <Gift className="h-5 w-5" />
+        <h3 className="text-xl font-semibold">Create New ERC1155 Collection Raffle</h3>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-base font-medium mb-2">Raffle Name</label>
+            <input
+              type="text"
+              value={formData.name || ''}
+              onChange={e => handleChange('name', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Start Time</label>
+            <input
+              type="datetime-local"
+              value={formData.startTime || ''}
+              onChange={e => handleChange('startTime', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Duration (minutes)</label>
+            <input
+              type="number"
+              value={formData.duration || ''}
+              onChange={e => handleChange('duration', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Ticket Limit</label>
+            <input
+              type="number"
+              value={formData.ticketLimit || ''}
+              onChange={e => handleChange('ticketLimit', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Winners Count</label>
+            <input
+              type="number"
+              value={formData.winnersCount || ''}
+              onChange={e => handleChange('winnersCount', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
+            <input
+              type="number"
+              value={formData.maxTicketsPerParticipant || ''}
+              onChange={e => handleChange('maxTicketsPerParticipant', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Custom Ticket Price (ETH)</label>
+            <input
+              type="number"
+              step="0.001"
+              value={formData.customTicketPrice || ''}
+              onChange={e => handleChange('customTicketPrice', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              placeholder="Leave empty to use protocol default"
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Collection Name</label>
+            <input
+              type="text"
+              value={formData.collectionName || ''}
+              onChange={e => handleChange('collectionName', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Collection Symbol</label>
+            <input
+              type="text"
+              value={formData.collectionSymbol || ''}
+              onChange={e => handleChange('collectionSymbol', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Base URI</label>
+            <input
+              type="url"
+              value={formData.baseURI || ''}
+              onChange={e => handleChange('baseURI', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Max Supply</label>
+            <input
+              type="number"
+              value={formData.maxSupply || ''}
+              onChange={e => handleChange('maxSupply', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Royalty Percentage (%)</label>
+            <input
+              type="number"
+              value={formData.royaltyPercentage || ''}
+              onChange={e => handleChange('royaltyPercentage', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Prize Token ID</label>
+            <input
+              type="number"
+              value={formData.prizeTokenId || ''}
+              onChange={e => handleChange('prizeTokenId', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Amount Per Winner</label>
+            <input
+              type="number"
+              value={formData.amountPerWinner || ''}
+              onChange={e => handleChange('amountPerWinner', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-base font-medium mb-2">Reveal Type</label>
+            <select
+              value={formData.revealType}
+              onChange={e => handleChange('revealType', e.target.value)}
+              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              required
+            >
+              <option value="0">Instant Reveal</option>
+              <option value="1">Manual Reveal</option>
+              <option value="2">Scheduled Reveal</option>
+            </select>
+          </div>
+          {(formData.revealType === '1' || formData.revealType === '2') && (
+            <div>
+              <label className="block text-base font-medium mb-2">Unrevealed Base URI</label>
+              <input
+                type="url"
+                value={formData.unrevealedBaseURI || ''}
+                onChange={e => handleChange('unrevealedBaseURI', e.target.value)}
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                required={formData.revealType === '1' || formData.revealType === '2'}
+              />
+            </div>
+          )}
+          {formData.revealType === '2' && (
+            <div>
+              <label className="block text-base font-medium mb-2">Reveal Time</label>
+              <input
+                type="datetime-local"
+                value={formData.revealTime || ''}
+                onChange={e => handleChange('revealTime', e.target.value)}
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                required={formData.revealType === '2'}
+              />
+            </div>
+          )}
+        </div>
+        <div className="flex items-center space-x-3">
+          <Switch
+            id="enable-social-tasks"
+            checked={showSocialTasks}
+            onCheckedChange={setShowSocialTasks}
+          />
+          <Label htmlFor="enable-social-tasks" className="text-base font-medium">
+            Enable social media tasks for this raffle
+          </Label>
+        </div>
+        {showSocialTasks && (
+          <div className="mt-8">
+            <SocialTaskCreator
+              onTasksChange={handleSocialTasksChange}
+              initialTasks={socialTasks}
+              visible={showSocialTasks}
+              onSubmit={(tasks) => {
+                toast.info('Tasks to save: ' + JSON.stringify(tasks, null, 2));
+              }}
+            />
+          </div>
+        )}
+        <div className="flex gap-4">
+          <Button
+            type="submit"
+            disabled={loading || !connected}
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-lg hover:from-orange-600 hover:to-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-base h-12"
+          >
+            {loading ? 'Creating...' : 'Create Raffle'}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
 }
 
 export default CreateRafflePage;

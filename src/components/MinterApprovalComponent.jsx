@@ -81,10 +81,10 @@ const MinterApprovalComponent = () => {
           provider
         );
         try {
-          const locked = await contract.minterLocked();
-          setIsLocked(locked);
-          const currentMinter = await contract.minter();
-          setCurrentMinter(currentMinter);
+      const locked = await contract.minterLocked();
+      setIsLocked(locked);
+      const currentMinter = await contract.minter();
+      setCurrentMinter(currentMinter);
           setCollectionType('erc1155');
         } catch (err) {
           setError('Failed to fetch collection: ' + err.message);
@@ -95,14 +95,14 @@ const MinterApprovalComponent = () => {
       // Fetch name and symbol only for ERC721
       if (isERC721) {
         try {
-          const name = await contract.name();
+      const name = await contract.name();
           setCollectionName(name);
         } catch (e) {
           setCollectionName('N/A');
         }
         try {
-          const symbol = await contract.symbol();
-          setCollectionSymbol(symbol);
+      const symbol = await contract.symbol();
+      setCollectionSymbol(symbol);
         } catch (e) {
           setCollectionSymbol('N/A');
         }
@@ -162,10 +162,10 @@ const MinterApprovalComponent = () => {
       let contract;
       if (collectionType === 'erc721') {
         contract = new ethers.Contract(
-          fetchedCollection,
-          contractABIs.erc721Prize,
-          signer
-        );
+        fetchedCollection,
+        contractABIs.erc721Prize,
+        signer
+      );
       } else if (collectionType === 'erc1155') {
         contract = new ethers.Contract(
           fetchedCollection,
@@ -204,10 +204,10 @@ const MinterApprovalComponent = () => {
       let contract;
       if (collectionType === 'erc721') {
         contract = new ethers.Contract(
-          fetchedCollection,
-          contractABIs.erc721Prize,
-          signer
-        );
+        fetchedCollection,
+        contractABIs.erc721Prize,
+        signer
+      );
       } else if (collectionType === 'erc1155') {
         contract = new ethers.Contract(
           fetchedCollection,
@@ -235,12 +235,12 @@ const MinterApprovalComponent = () => {
           tx = await contract.lockMinterApproval();
         }
       } else if (collectionType === 'erc1155') {
-        if (isLocked) {
-          console.log('Attempting to unlock minter approval...');
-          tx = await contract.unlockMinterApproval();
-        } else {
-          console.log('Attempting to lock minter approval...');
-          tx = await contract.lockMinterApproval();
+      if (isLocked) {
+        console.log('Attempting to unlock minter approval...');
+        tx = await contract.unlockMinterApproval();
+      } else {
+        console.log('Attempting to lock minter approval...');
+        tx = await contract.lockMinterApproval();
         }
       }
       

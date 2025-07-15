@@ -1532,7 +1532,7 @@ const RaffleDetailPage = () => {
     // Only show if user is creator, raffle is Pending or Active, and (isRefundable or usesCustomPrice)
     return (
       connected &&
-      address?.toLowerCase() === raffle?.creator.toLowerCase() &&
+           address?.toLowerCase() === raffle?.creator.toLowerCase() && 
       (raffle?.state === 'Pending' || raffle?.state === 'Active') &&
       (isRefundable === true || raffle?.usesCustomPrice === true)
     );
@@ -2031,8 +2031,8 @@ const RaffleDetailPage = () => {
                   {/* NFT Prize */}
                   {raffle.prizeCollection && raffle.prizeCollection !== ethers.constants.AddressZero && (!raffle.erc20PrizeAmount || raffle.erc20PrizeAmount.isZero?.() || raffle.erc20PrizeAmount === '0') && (!raffle.ethPrizeAmount || raffle.ethPrizeAmount.isZero?.() || raffle.ethPrizeAmount === '0') && (
                 <>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Prize Collection:</span>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400">Prize Collection:</span>
                     <a
                       href={getExplorerLink(raffle.prizeCollection)}
                       target="_blank"
@@ -2041,7 +2041,7 @@ const RaffleDetailPage = () => {
                     >
                       {raffle.prizeCollection.slice(0, 10)}...{raffle.prizeCollection.slice(-8)}
                     </a>
-                  </div>
+                </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500 dark:text-gray-400">Collection Type:</span>
                     <span className="font-semibold">
