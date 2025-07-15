@@ -11,6 +11,7 @@ import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
 import { toast } from '../components/ui/sonner';
 import { contractABIs } from '../contracts/contractABIs';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '../components/ui/select';
 
 // --- ERC1155DropForm ---
 function ERC1155DropForm() {
@@ -1418,16 +1419,20 @@ const NewERC721DropForm = () => {
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Reveal Type</label>
-            <select
+            <Select
               value={formData.revealType}
-              onChange={e => handleChange('revealType', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              onValueChange={value => handleChange('revealType', value)}
               required
             >
-              <option value="0">Instant Reveal</option>
-              <option value="1">Manual Reveal</option>
-              <option value="2">Scheduled Reveal</option>
-            </select>
+              <SelectTrigger className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background">
+                <SelectValue placeholder="Select Reveal Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Instant Reveal</SelectItem>
+                <SelectItem value="1">Manual Reveal</SelectItem>
+                <SelectItem value="2">Scheduled Reveal</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           {(formData.revealType === '1' || formData.revealType === '2') && (
             <div>
@@ -3498,16 +3503,20 @@ function NewERC1155DropForm() {
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Reveal Type</label>
-            <select
+            <Select
               value={formData.revealType}
-              onChange={e => handleChange('revealType', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              onValueChange={value => handleChange('revealType', value)}
               required
             >
-              <option value="0">Instant Reveal</option>
-              <option value="1">Manual Reveal</option>
-              <option value="2">Scheduled Reveal</option>
-            </select>
+              <SelectTrigger className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background">
+                <SelectValue placeholder="Select Reveal Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Instant Reveal</SelectItem>
+                <SelectItem value="1">Manual Reveal</SelectItem>
+                <SelectItem value="2">Scheduled Reveal</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           {(formData.revealType === '1' || formData.revealType === '2') && (
             <div>
