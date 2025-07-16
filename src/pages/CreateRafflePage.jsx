@@ -31,7 +31,10 @@ function ERC1155DropForm() {
     winnersCount: '',
     maxTicketsPerParticipant: '',
     ticketPrice: '',
+    royaltyPercentage: '',
+    royaltyRecipient: '',
   });
+  const config = useRaffleConfig(true);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -89,8 +92,8 @@ function ERC1155DropForm() {
         collectionSymbol: '',
         collectionBaseURI: '',
         creator: address,
-        royaltyPercentage: 0,
-        royaltyRecipient: ethers.constants.AddressZero,
+        royaltyPercentage: Math.round(Number(formData.royaltyPercentage || '0') * 100),
+        royaltyRecipient: formData.royaltyRecipient,
         maxSupply: 0,
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
@@ -113,6 +116,8 @@ function ERC1155DropForm() {
           winnersCount: '',
           maxTicketsPerParticipant: '',
           ticketPrice: '',
+          royaltyPercentage: '',
+          royaltyRecipient: '',
         });
     } catch (error) {
       console.error('Error creating raffle:', error);
@@ -187,21 +192,31 @@ function ERC1155DropForm() {
             <label className="block text-base font-medium mb-2">Duration (minutes)</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minDuration}
+              max={config.loading ? undefined : config.maxDuration}
               value={formData.duration || ''}
-              onChange={e => handleChange('duration', e.target.value)}
+              onChange={(e) => handleChange('duration', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minDuration ?? '...'} min, Max Allowed: ${config.maxDuration ?? '...'} min`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Ticket Limit</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minTicketLimit}
+              max={config.loading ? undefined : config.maxTicketLimit}
               value={formData.ticketLimit || ''}
               onChange={e => handleChange('ticketLimit', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minTicketLimit ?? '...'}, Max Allowed: ${config.maxTicketLimit ?? '...'}`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Winner Count</label>
@@ -217,11 +232,16 @@ function ERC1155DropForm() {
             <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
             <input
               type="number"
+              min={config.loading ? undefined : 1}
+              max={config.loading ? undefined : config.maxTicketsPerParticipant}
               value={formData.maxTicketsPerParticipant || ''}
               onChange={e => handleChange('maxTicketsPerParticipant', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Max Allowed: ${config.maxTicketsPerParticipant ?? '...'}`}
+            </div>
           </div>
         </div>
         <div>
@@ -306,8 +326,10 @@ const PrizedRaffleForm = () => {
     collectionSymbol: '',
     baseURI: '',
     maxSupply: '',
-    royaltyPercentage: ''
+    royaltyPercentage: '',
+    royaltyRecipient: '',
   });
+  const config = useRaffleConfig(true);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -354,8 +376,8 @@ const PrizedRaffleForm = () => {
           collectionSymbol: formData.collectionSymbol,
           collectionBaseURI: formData.baseURI,
           creator: address,
-          royaltyPercentage: parseInt(formData.royaltyPercentage || '0'),
-          royaltyRecipient: ethers.constants.AddressZero,
+          royaltyPercentage: Math.round(Number(formData.royaltyPercentage || '0') * 100),
+          royaltyRecipient: formData.royaltyRecipient,
           maxSupply: parseInt(formData.maxSupply || formData.winnersCount),
           erc20PrizeToken: ethers.constants.AddressZero,
           erc20PrizeAmount: 0,
@@ -442,7 +464,8 @@ const PrizedRaffleForm = () => {
           collectionSymbol: '',
           baseURI: '',
           maxSupply: '',
-          royaltyPercentage: ''
+          royaltyPercentage: '',
+          royaltyRecipient: '',
         });
         setSocialTasks([]);
       } else {
@@ -492,22 +515,32 @@ const PrizedRaffleForm = () => {
             <label className="block text-base font-medium mb-2">Duration (minutes)</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minDuration}
+              max={config.loading ? undefined : config.maxDuration}
               value={formData.duration || ''}
               onChange={(e) => handleChange('duration', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minDuration ?? '...'} min, Max Allowed: ${config.maxDuration ?? '...'} min`}
+            </div>
           </div>
           
           <div>
             <label className="block text-base font-medium mb-2">Ticket Limit</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minTicketLimit}
+              max={config.loading ? undefined : config.maxTicketLimit}
               value={formData.ticketLimit || ''}
-              onChange={(e) => handleChange('ticketLimit', e.target.value)}
+              onChange={e => handleChange('ticketLimit', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minTicketLimit ?? '...'}, Max Allowed: ${config.maxTicketLimit ?? '...'}`}
+            </div>
           </div>
           
           <div>
@@ -525,11 +558,16 @@ const PrizedRaffleForm = () => {
             <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
             <input
               type="number"
+              min={config.loading ? undefined : 1}
+              max={config.loading ? undefined : config.maxTicketsPerParticipant}
               value={formData.maxTicketsPerParticipant || ''}
-              onChange={(e) => handleChange('maxTicketsPerParticipant', e.target.value)}
+              onChange={e => handleChange('maxTicketsPerParticipant', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Max Allowed: ${config.maxTicketsPerParticipant ?? '...'}`}
+            </div>
           </div>
         </div>
 
@@ -624,15 +662,28 @@ const PrizedRaffleForm = () => {
               </div>
               
               <div>
-                <label className="block text-base font-medium mb-2">Royalty Percentage</label>
+                <label className="block text-base font-medium mb-2">Royalty (%)</label>
                 <input
                   type="number"
                   min="0"
-                  max="10"
+                  max="100"
+                  step="0.01"
                   value={formData.royaltyPercentage || ''}
                   onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
                   className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-                  placeholder="0-10%"
+                  placeholder="e.g. 5 for 5%"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-base font-medium mb-2">Royalty Recipient</label>
+                <input
+                  type="text"
+                  value={formData.royaltyRecipient || ''}
+                  onChange={(e) => handleChange('royaltyRecipient', e.target.value)}
+                  className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background font-mono"
+                  placeholder="0x..."
+                  required
                 />
               </div>
             </div>
@@ -985,6 +1036,7 @@ const WhitelistRaffleForm = () => {
     winnersCount: '',
     maxTicketsPerParticipant: ''
   });
+  const config = useRaffleConfig(false);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -1012,7 +1064,7 @@ const WhitelistRaffleForm = () => {
         duration,
         ticketLimit: parseInt(formData.ticketLimit),
         winnersCount: parseInt(formData.winnersCount),
-        maxTicketsPerParticipant: parseInt(formData.maxTicketsPerParticipant),
+        maxTicketsPerParticipant: 1,
         isPrized: false,
         customTicketPrice: 0,
         erc721Drop: false,
@@ -1105,11 +1157,15 @@ const WhitelistRaffleForm = () => {
             <label className="block text-base font-medium mb-2">Ticket Limit</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minTicketLimit}
               value={formData.ticketLimit || ''}
-              onChange={(e) => handleChange('ticketLimit', e.target.value)}
+              onChange={e => handleChange('ticketLimit', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minTicketLimit ?? '...'}`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Winner Count</label>
@@ -1125,14 +1181,18 @@ const WhitelistRaffleForm = () => {
             <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
             <input
               type="number"
-              value={formData.maxTicketsPerParticipant || ''}
-              onChange={(e) => handleChange('maxTicketsPerParticipant', e.target.value)}
+              min={1}
+              max={1}
+              value={1}
+              disabled
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              Max Allowed Tickets Per Participant: 1
+            </div>
           </div>
         </div>
-
         {/* Social Media Tasks Toggle */}
         <div className="flex items-center space-x-3">
           <Switch
@@ -1144,7 +1204,6 @@ const WhitelistRaffleForm = () => {
             Enable social media tasks for this raffle
           </Label>
         </div>
-
         {/* Social Media Tasks Section */}
         {showSocialTasks && (
           <div className="mt-8">
@@ -1153,14 +1212,11 @@ const WhitelistRaffleForm = () => {
               initialTasks={socialTasks}
               visible={showSocialTasks}
               onSubmit={(tasks) => {
-                // Placeholder: show tasks in toast for now
                 toast.info('Tasks to save: ' + JSON.stringify(tasks, null, 2));
-                // In production, you would call SocialTaskService.createRaffleTasks(raffleAddress, tasks)
               }}
             />
           </div>
         )}
-
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -1194,11 +1250,13 @@ const NewERC721DropForm = () => {
     baseURI: '',
     maxSupply: '',
     royaltyPercentage: '',
+    royaltyRecipient: '',
     // Reveal feature fields
     revealType: '0', // 0 = Instant, 1 = Manual, 2 = Scheduled
     unrevealedBaseURI: '',
     revealTime: '',
   });
+  const config = useRaffleConfig(true);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -1251,8 +1309,8 @@ const NewERC721DropForm = () => {
         collectionSymbol: formData.collectionSymbol,
         collectionBaseURI: formData.baseURI,
         creator: address,
-        royaltyPercentage: parseInt(formData.royaltyPercentage || '0'),
-        royaltyRecipient: ethers.constants.AddressZero,
+        royaltyPercentage: Math.round(Number(formData.royaltyPercentage || '0') * 100),
+        royaltyRecipient: formData.royaltyRecipient,
         maxSupply: parseInt(formData.maxSupply || formData.winnersCount),
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
@@ -1278,6 +1336,7 @@ const NewERC721DropForm = () => {
           baseURI: '',
           maxSupply: '',
           royaltyPercentage: '',
+          royaltyRecipient: '',
           revealType: '0',
           unrevealedBaseURI: '',
           revealTime: '',
@@ -1322,21 +1381,31 @@ const NewERC721DropForm = () => {
             <label className="block text-base font-medium mb-2">Duration (minutes)</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minDuration}
+              max={config.loading ? undefined : config.maxDuration}
               value={formData.duration || ''}
               onChange={(e) => handleChange('duration', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minDuration ?? '...'} min, Max Allowed: ${config.maxDuration ?? '...'} min`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Ticket Limit</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minTicketLimit}
+              max={config.loading ? undefined : config.maxTicketLimit}
               value={formData.ticketLimit || ''}
-              onChange={(e) => handleChange('ticketLimit', e.target.value)}
+              onChange={e => handleChange('ticketLimit', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minTicketLimit ?? '...'}, Max Allowed: ${config.maxTicketLimit ?? '...'}`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Winner Count</label>
@@ -1352,11 +1421,16 @@ const NewERC721DropForm = () => {
             <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
             <input
               type="number"
+              min={config.loading ? undefined : 1}
+              max={config.loading ? undefined : config.maxTicketsPerParticipant}
               value={formData.maxTicketsPerParticipant || ''}
-              onChange={(e) => handleChange('maxTicketsPerParticipant', e.target.value)}
+              onChange={e => handleChange('maxTicketsPerParticipant', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Max Allowed: ${config.maxTicketsPerParticipant ?? '...'}`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Custom Ticket Price (ETH)</label>
@@ -1364,7 +1438,7 @@ const NewERC721DropForm = () => {
               type="number"
               step="0.001"
               value={formData.customTicketPrice || ''}
-              onChange={(e) => handleChange('customTicketPrice', e.target.value)}
+              onChange={e => handleChange('customTicketPrice', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               placeholder="Leave empty to use protocol default"
             />
@@ -1414,12 +1488,28 @@ const NewERC721DropForm = () => {
               />
             </div>
             <div>
-              <label className="block text-base font-medium mb-2">Royalty Percentage (%)</label>
+              <label className="block text-base font-medium mb-2">Royalty (%)</label>
               <input
                 type="number"
+                min="0"
+                max="100"
+                step="0.01"
                 value={formData.royaltyPercentage || ''}
                 onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
                 className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                placeholder="e.g. 5 for 5%"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium mb-2">Royalty Recipient</label>
+              <input
+                type="text"
+                value={formData.royaltyRecipient || ''}
+                onChange={(e) => handleChange('royaltyRecipient', e.target.value)}
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background font-mono"
+                placeholder="0x..."
+                required
               />
             </div>
             <div>
@@ -1476,23 +1566,18 @@ const NewERC721DropForm = () => {
             Enable social media tasks for this raffle
           </Label>
         </div>
-
-        {/* Social Media Tasks Section */}
         {showSocialTasks && (
           <div className="mt-8">
-            <SocialTaskCreator 
+            <SocialTaskCreator
               onTasksChange={handleSocialTasksChange}
               initialTasks={socialTasks}
               visible={showSocialTasks}
               onSubmit={(tasks) => {
-                // Placeholder: show tasks in toast for now
                 toast.info('Tasks to save: ' + JSON.stringify(tasks, null, 2));
-                // In production, you would call SocialTaskService.createRaffleTasks(raffleAddress, tasks)
               }}
             />
           </div>
         )}
-
         <div className="flex gap-4">
           <Button
             type="submit"
@@ -1523,6 +1608,7 @@ function ExistingERC721DropForm() {
     maxTicketsPerUser: '',
     ticketPrice: '',
   });
+  const config = useRaffleConfig(true);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -1637,29 +1723,36 @@ function ExistingERC721DropForm() {
             <label className="block text-base font-medium mb-2">Duration (minutes)</label>
             <input
               type="number"
-              min="1"
+              min={config.loading ? undefined : config.minDuration}
+              max={config.loading ? undefined : config.maxDuration}
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minDuration ?? '...'} min, Max Allowed: ${config.maxDuration ?? '...'} min`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Ticket Limit</label>
             <input
               type="number"
-              min="1"
+              min={config.loading ? undefined : config.minTicketLimit}
+              max={config.loading ? undefined : config.maxTicketLimit}
               value={formData.ticketLimit || ''}
               onChange={e => handleChange('ticketLimit', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minTicketLimit ?? '...'}, Max Allowed: ${config.maxTicketLimit ?? '...'}`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Winner Count</label>
             <input
               type="number"
-              min="1"
               value={formData.winnersCount || ''}
               onChange={e => handleChange('winnersCount', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
@@ -1670,12 +1763,16 @@ function ExistingERC721DropForm() {
             <label className="block text-base font-medium mb-2">Max Tickets Per User</label>
             <input
               type="number"
-              min="1"
+              min={config.loading ? undefined : 1}
+              max={config.loading ? undefined : config.maxTicketsPerParticipant}
               value={formData.maxTicketsPerUser || ''}
               onChange={e => handleChange('maxTicketsPerUser', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Max Allowed: ${config.maxTicketsPerParticipant ?? '...'}`}
+            </div>
           </div>
         </div>
         <div>
@@ -1750,6 +1847,7 @@ function ExistingERC1155DropForm() {
     maxTicketsPerParticipant: '',
     ticketPrice: '',
   });
+  const config = useRaffleConfig(true);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -1888,21 +1986,31 @@ function ExistingERC1155DropForm() {
             <label className="block text-base font-medium mb-2">Duration (minutes)</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minDuration}
+              max={config.loading ? undefined : config.maxDuration}
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minDuration ?? '...'} min, Max Allowed: ${config.maxDuration ?? '...'} min`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Ticket Limit</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minTicketLimit}
+              max={config.loading ? undefined : config.maxTicketLimit}
               value={formData.ticketLimit || ''}
               onChange={e => handleChange('ticketLimit', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minTicketLimit ?? '...'}, Max Allowed: ${config.maxTicketLimit ?? '...'}`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Winners Count</label>
@@ -1918,11 +2026,16 @@ function ExistingERC1155DropForm() {
             <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
             <input
               type="number"
+              min={config.loading ? undefined : 1}
+              max={config.loading ? undefined : config.maxTicketsPerParticipant}
               value={formData.maxTicketsPerParticipant || ''}
               onChange={e => handleChange('maxTicketsPerParticipant', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Max Allowed: ${config.maxTicketsPerParticipant ?? '...'}`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Custom Ticket Price (ETH)</label>
@@ -2177,6 +2290,7 @@ function LuckySaleERC721Form() {
     maxTicketsPerParticipant: '',
     ticketPrice: '',
   });
+  const config = useRaffleConfig(true);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -2320,21 +2434,31 @@ function LuckySaleERC721Form() {
             <label className="block text-base font-medium mb-2">Duration (minutes)</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minDuration}
+              max={config.loading ? undefined : config.maxDuration}
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minDuration ?? '...'} min, Max Allowed: ${config.maxDuration ?? '...'} min`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Ticket Limit</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minTicketLimit}
+              max={config.loading ? undefined : config.maxTicketLimit}
               value={formData.ticketLimit || ''}
               onChange={e => handleChange('ticketLimit', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minTicketLimit ?? '...'}, Max Allowed: ${config.maxTicketLimit ?? '...'}`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Winner Count</label>
@@ -2350,11 +2474,16 @@ function LuckySaleERC721Form() {
             <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
             <input
               type="number"
+              min={config.loading ? undefined : 1}
+              max={config.loading ? undefined : config.maxTicketsPerParticipant}
               value={formData.maxTicketsPerParticipant || ''}
               onChange={e => handleChange('maxTicketsPerParticipant', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Max Allowed: ${config.maxTicketsPerParticipant ?? '...'}`}
+            </div>
           </div>
         </div>
         <div>
@@ -2431,6 +2560,7 @@ function LuckySaleERC1155Form() {
     maxTicketsPerParticipant: '',
     ticketPrice: '',
   });
+  const config = useRaffleConfig(true);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -2586,21 +2716,31 @@ function LuckySaleERC1155Form() {
             <label className="block text-base font-medium mb-2">Duration (minutes)</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minDuration}
+              max={config.loading ? undefined : config.maxDuration}
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minDuration ?? '...'} min, Max Allowed: ${config.maxDuration ?? '...'} min`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Ticket Limit</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minTicketLimit}
+              max={config.loading ? undefined : config.maxTicketLimit}
               value={formData.ticketLimit || ''}
               onChange={e => handleChange('ticketLimit', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minTicketLimit ?? '...'}, Max Allowed: ${config.maxTicketLimit ?? '...'}`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Winner Count</label>
@@ -2616,11 +2756,16 @@ function LuckySaleERC1155Form() {
             <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
             <input
               type="number"
+              min={config.loading ? undefined : 1}
+              max={config.loading ? undefined : config.maxTicketsPerParticipant}
               value={formData.maxTicketsPerParticipant || ''}
               onChange={e => handleChange('maxTicketsPerParticipant', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Max Allowed: ${config.maxTicketsPerParticipant ?? '...'}`}
+            </div>
           </div>
         </div>
         <div>
@@ -2706,6 +2851,7 @@ function ETHGiveawayForm() {
     winnersCount: '',
     maxTicketsPerParticipant: ''
   });
+  const config = useRaffleConfig(true);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -2830,21 +2976,31 @@ function ETHGiveawayForm() {
             <label className="block text-base font-medium mb-2">Duration (minutes)</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minDuration}
+              max={config.loading ? undefined : config.maxDuration}
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minDuration ?? '...'} min, Max Allowed: ${config.maxDuration ?? '...'} min`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Ticket Limit</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minTicketLimit}
+              max={config.loading ? undefined : config.maxTicketLimit}
               value={formData.ticketLimit || ''}
               onChange={e => handleChange('ticketLimit', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minTicketLimit ?? '...'}, Max Allowed: ${config.maxTicketLimit ?? '...'}`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Winner Count</label>
@@ -2860,11 +3016,16 @@ function ETHGiveawayForm() {
             <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
             <input
               type="number"
+              min={config.loading ? undefined : 1}
+              max={config.loading ? undefined : config.maxTicketsPerParticipant}
               value={formData.maxTicketsPerParticipant || ''}
               onChange={e => handleChange('maxTicketsPerParticipant', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Max Allowed: ${config.maxTicketsPerParticipant ?? '...'}`}
+            </div>
           </div>
         </div>
 
@@ -2927,6 +3088,7 @@ function ERC20GiveawayForm() {
     winnersCount: '',
     maxTicketsPerParticipant: ''
   });
+  const config = useRaffleConfig(true);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -3072,21 +3234,31 @@ function ERC20GiveawayForm() {
             <label className="block text-base font-medium mb-2">Duration (minutes)</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minDuration}
+              max={config.loading ? undefined : config.maxDuration}
               value={formData.duration || ''}
               onChange={e => handleChange('duration', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minDuration ?? '...'} min, Max Allowed: ${config.maxDuration ?? '...'} min`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Ticket Limit</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minTicketLimit}
+              max={config.loading ? undefined : config.maxTicketLimit}
               value={formData.ticketLimit || ''}
               onChange={e => handleChange('ticketLimit', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minTicketLimit ?? '...'}, Max Allowed: ${config.maxTicketLimit ?? '...'}`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Winner Count</label>
@@ -3102,11 +3274,16 @@ function ERC20GiveawayForm() {
             <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
             <input
               type="number"
+              min={config.loading ? undefined : 1}
+              max={config.loading ? undefined : config.maxTicketsPerParticipant}
               value={formData.maxTicketsPerParticipant || ''}
               onChange={e => handleChange('maxTicketsPerParticipant', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Max Allowed: ${config.maxTicketsPerParticipant ?? '...'}`}
+            </div>
           </div>
         </div>
 
@@ -3261,6 +3438,7 @@ function NewERC1155DropForm() {
     baseURI: '',
     maxSupply: '',
     royaltyPercentage: '',
+    royaltyRecipient: '',
     prizeTokenId: '1',
     amountPerWinner: '',
     // Reveal feature fields
@@ -3268,6 +3446,7 @@ function NewERC1155DropForm() {
     unrevealedBaseURI: '',
     revealTime: '',
   });
+  const config = useRaffleConfig(true);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -3320,8 +3499,8 @@ function NewERC1155DropForm() {
         collectionSymbol: formData.collectionSymbol,
         collectionBaseURI: formData.baseURI,
         creator: address,
-        royaltyPercentage: parseInt(formData.royaltyPercentage || '0'),
-        royaltyRecipient: ethers.constants.AddressZero,
+        royaltyPercentage: Math.round(Number(formData.royaltyPercentage || '0') * 100),
+        royaltyRecipient: formData.royaltyRecipient,
         maxSupply: parseInt(formData.maxSupply || formData.winnersCount),
         erc20PrizeToken: ethers.constants.AddressZero,
         erc20PrizeAmount: 0,
@@ -3347,6 +3526,7 @@ function NewERC1155DropForm() {
         baseURI: '',
         maxSupply: '',
         royaltyPercentage: '',
+        royaltyRecipient: '',
         prizeTokenId: '1',
         amountPerWinner: '',
         revealType: '0',
@@ -3393,21 +3573,31 @@ function NewERC1155DropForm() {
             <label className="block text-base font-medium mb-2">Duration (minutes)</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minDuration}
+              max={config.loading ? undefined : config.maxDuration}
               value={formData.duration || ''}
-              onChange={e => handleChange('duration', e.target.value)}
+              onChange={(e) => handleChange('duration', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minDuration ?? '...'} min, Max Allowed: ${config.maxDuration ?? '...'} min`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Ticket Limit</label>
             <input
               type="number"
+              min={config.loading ? undefined : config.minTicketLimit}
+              max={config.loading ? undefined : config.maxTicketLimit}
               value={formData.ticketLimit || ''}
               onChange={e => handleChange('ticketLimit', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Min Allowed: ${config.minTicketLimit ?? '...'}, Max Allowed: ${config.maxTicketLimit ?? '...'}`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Winners Count</label>
@@ -3423,11 +3613,16 @@ function NewERC1155DropForm() {
             <label className="block text-base font-medium mb-2">Max Tickets Per Participant</label>
             <input
               type="number"
+              min={config.loading ? undefined : 1}
+              max={config.loading ? undefined : config.maxTicketsPerParticipant}
               value={formData.maxTicketsPerParticipant || ''}
               onChange={e => handleChange('maxTicketsPerParticipant', e.target.value)}
               className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {config.loading ? 'Loading...' : config.error ? config.error : `Max Allowed: ${config.maxTicketsPerParticipant ?? '...'}`}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Custom Ticket Price (ETH)</label>
@@ -3505,12 +3700,28 @@ function NewERC1155DropForm() {
               />
             </div>
             <div>
-              <label className="block text-base font-medium mb-2">Royalty Percentage (%)</label>
+              <label className="block text-base font-medium mb-2">Royalty (%)</label>
               <input
                 type="number"
+                min="0"
+                max="100"
+                step="0.01"
                 value={formData.royaltyPercentage || ''}
                 onChange={e => handleChange('royaltyPercentage', e.target.value)}
                 className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                placeholder="e.g. 5 for 5%"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium mb-2">Royalty Recipient</label>
+              <input
+                type="text"
+                value={formData.royaltyRecipient || ''}
+                onChange={e => handleChange('royaltyRecipient', e.target.value)}
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background font-mono"
+                placeholder="0x..."
+                required
               />
             </div>
             <div>
@@ -3591,6 +3802,131 @@ function NewERC1155DropForm() {
       </form>
     </div>
   );
+}
+
+// Utility to fetch config values from RaffleManager
+async function fetchRaffleConfig(raffleManager, isPrized) {
+  if (!raffleManager) return {};
+  try {
+    if (!isPrized) {
+      // Non-prized: only min ticket limit, max tickets per participant is always 1
+      const minTicketLimit = await raffleManager.minTicketLimitNonPrized();
+      return {
+        minTicketLimit: minTicketLimit.toNumber ? minTicketLimit.toNumber() : Number(minTicketLimit),
+        maxTicketsPerParticipant: 1,
+      };
+    } else {
+      // Prized: fetch all limits
+      const [minTicketLimit, maxTicketLimit, minDuration, maxDuration, maxTicketsPerParticipant] = await Promise.all([
+        raffleManager.minTicketLimit(),
+        raffleManager.maxTicketLimit(),
+        raffleManager.minRaffleDuration(),
+        raffleManager.maxRaffleDuration(),
+        raffleManager.maxTicketsPerParticipant(),
+      ]);
+      return {
+        minTicketLimit: minTicketLimit.toNumber ? minTicketLimit.toNumber() : Number(minTicketLimit),
+        maxTicketLimit: maxTicketLimit.toNumber ? maxTicketLimit.toNumber() : Number(maxTicketLimit),
+        minDuration: minDuration.toNumber ? minDuration.toNumber() : Number(minDuration),
+        maxDuration: maxDuration.toNumber ? maxDuration.toNumber() : Number(maxDuration),
+        maxTicketsPerParticipant: maxTicketsPerParticipant.toNumber ? maxTicketsPerParticipant.toNumber() : Number(maxTicketsPerParticipant),
+      };
+    }
+  } catch (e) {
+    return {};
+  }
+}
+
+// --- Shared hook for fetching raffle limits ---
+function useRaffleLimits(isPrized) {
+  const { contracts } = useContract();
+  const [limits, setLimits] = useState({ loading: true });
+  useEffect(() => {
+    let mounted = true;
+    async function fetchLimits() {
+      if (!contracts.raffleManager) {
+        setLimits({ loading: true });
+        return;
+      }
+      try {
+        if (!isPrized) {
+          const minTicketLimit = await contracts.raffleManager.minTicketLimitNonPrized();
+          if (mounted) setLimits({ minTicketLimit: Number(minTicketLimit), maxTicketsPerParticipant: 1, loading: false });
+        } else {
+          const [minTicketLimit, maxTicketLimit, minDuration, maxDuration, maxTicketsPerParticipant] = await Promise.all([
+            contracts.raffleManager.minTicketLimit(),
+            contracts.raffleManager.maxTicketLimit(),
+            contracts.raffleManager.minRaffleDuration(),
+            contracts.raffleManager.maxRaffleDuration(),
+            contracts.raffleManager.maxTicketsPerParticipant(),
+          ]);
+          if (mounted) setLimits({
+            minTicketLimit: Number(minTicketLimit),
+            maxTicketLimit: Number(maxTicketLimit),
+            minDuration: Number(minDuration),
+            maxDuration: Number(maxDuration),
+            maxTicketsPerParticipant: Number(maxTicketsPerParticipant),
+            loading: false
+          });
+        }
+      } catch (e) {
+        setLimits({ loading: false });
+      }
+    }
+    fetchLimits();
+    return () => { mounted = false; };
+  }, [contracts.raffleManager, isPrized]);
+  return limits;
+}
+
+// --- Shared hook for fetching raffle config using grouped getters ---
+function useRaffleConfig(isPrized) {
+  const { contracts } = useContract();
+  const [config, setConfig] = useState({ loading: true });
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    let mounted = true;
+    async function fetchConfig() {
+      if (!contracts.raffleManager) {
+        setConfig({ loading: true });
+        return;
+      }
+      try {
+        if (!isPrized) {
+          // Non-prized: only min ticket limit, max tickets per participant is always 1
+          const [limits] = await Promise.all([
+            contracts.raffleManager.getAllTicketLimits()
+          ]);
+          if (mounted) setConfig({
+            minTicketLimit: limits.minNonPrized?.toString?.() ?? '',
+            maxTicketsPerParticipant: '1',
+            loading: false
+          });
+        } else {
+          const [limits, maxPerParticipant, duration] = await Promise.all([
+            contracts.raffleManager.getAllTicketLimits(),
+            contracts.raffleManager.getMaxTicketsPerParticipant(),
+            contracts.raffleManager.getDurationLimits()
+          ]);
+          if (mounted) setConfig({
+            minTicketLimit: limits.minPrized?.toString?.() ?? '',
+            maxTicketLimit: limits.max?.toString?.() ?? '',
+            minDuration: duration[0] ? Math.floor(Number(duration[0]) / 60).toString() : '',
+            maxDuration: duration[1] ? Math.floor(Number(duration[1]) / 60).toString() : '',
+            maxTicketsPerParticipant: maxPerParticipant?.toString?.() ?? '',
+            loading: false
+          });
+        }
+        setError(null);
+      } catch (e) {
+        setConfig({ loading: false });
+        setError('Failed to fetch raffle config.');
+      }
+    }
+    fetchConfig();
+    return () => { mounted = false; };
+  }, [contracts.raffleManager, isPrized]);
+  return { ...config, error };
 }
 
 export default CreateRafflePage;
