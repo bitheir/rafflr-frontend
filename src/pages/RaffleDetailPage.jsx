@@ -1005,26 +1005,25 @@ function getRefundability(raffle) {
 
 // Helper function to get the correct explorer link for the prize collection
 function getExplorerLink(address) {
-  // Try to get chainId from window.ethereum or fallback to Ethereum mainnet
   let chainId = 1;
   if (window.ethereum && window.ethereum.chainId) {
     chainId = parseInt(window.ethereum.chainId, 16);
   }
   const explorerMap = {
     1: 'https://etherscan.io',
-    5: 'https://goerli.etherscan.io',
-    11155111: 'https://sepolia.etherscan.io',
-    137: 'https://polygonscan.com',
-    80001: 'https://mumbai.polygonscan.com',
     10: 'https://optimistic.etherscan.io',
-    42161: 'https://arbiscan.io',
     56: 'https://bscscan.com',
     97: 'https://testnet.bscscan.com',
-    43114: 'https://snowtrace.io',
-    43113: 'https://testnet.snowtrace.io',
+    43113: 'https://testnet.snowscan.xyz', // updated
+    43114: 'https://snowscan.xyz', // updated
     8453: 'https://basescan.org',
-    84531: 'https://goerli.basescan.org',
-    84532: 'https://sepolia.basescan.org', // Base Sepolia
+    84532: 'https://sepolia.basescan.org',
+    11155111: 'https://sepolia.etherscan.io',
+    11155420: 'https://sepolia-optimism.etherscan.io',
+    2020: 'https://app.roninchain.com',
+    2021: 'https://saigon-app.roninchain.com/explorer',
+    42161: 'https://arbiscan.io',
+    421614: 'https://sepolia.arbiscan.io',
   };
   const baseUrl = explorerMap[chainId] || explorerMap[1];
   return `${baseUrl}/address/${address}`;
