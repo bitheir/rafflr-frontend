@@ -1592,6 +1592,25 @@ const NewERC721DropForm = () => {
   );
 }
 
+// Helper for ERC721/ERC1155 detection
+async function detectCollectionStandard(address, provider) {
+  if (!address || !provider) return null;
+  try {
+    const iface = new ethers.utils.Interface([
+      'function supportsInterface(bytes4 interfaceId) view returns (bool)'
+    ]);
+    const contract = new ethers.Contract(address, iface, provider);
+    // ERC721: 0x80ac58cd, ERC1155: 0xd9b67a26
+    const isERC721 = await contract.supportsInterface('0x80ac58cd').catch(() => false);
+    const isERC1155 = await contract.supportsInterface('0xd9b67a26').catch(() => false);
+    if (isERC721) return 'ERC721';
+    if (isERC1155) return 'ERC1155';
+    return 'Other';
+  } catch {
+    return null;
+  }
+}
+
 function ExistingERC721DropForm() {
   const { connected, address, provider } = useWallet();
   const { contracts, executeTransaction } = useContract();
@@ -1608,7 +1627,31 @@ function ExistingERC721DropForm() {
     maxTicketsPerUser: '',
     ticketPrice: '',
   });
+  const [collectionWhitelistStatus, setCollectionWhitelistStatus] = useState({ status: null, loading: false, error: null, standard: null });
   const config = useRaffleConfig(true);
+
+  // Check collection whitelist status when collection changes
+  useEffect(() => {
+    let cancelled = false;
+    async function checkWhitelistAndStandard() {
+      setCollectionWhitelistStatus({ status: null, loading: true, error: null, standard: null });
+      if (!formData.collection || !contracts.raffleManager || !provider) {
+        setCollectionWhitelistStatus({ status: null, loading: false, error: null, standard: null });
+        return;
+      }
+      try {
+        const [isWhitelisted, standard] = await Promise.all([
+          contracts.raffleManager.isCollectionApproved(formData.collection),
+          detectCollectionStandard(formData.collection, provider)
+        ]);
+        if (!cancelled) setCollectionWhitelistStatus({ status: isWhitelisted, loading: false, error: null, standard });
+      } catch (e) {
+        if (!cancelled) setCollectionWhitelistStatus({ status: null, loading: false, error: 'Error checking status', standard: null });
+      }
+    }
+    checkWhitelistAndStandard();
+    return () => { cancelled = true; };
+  }, [formData.collection, contracts.raffleManager, provider]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -1708,6 +1751,25 @@ function ExistingERC721DropForm() {
               placeholder="0x..."
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {collectionWhitelistStatus.loading
+                ? 'Checking whitelist status...'
+                : collectionWhitelistStatus.error
+                  ? collectionWhitelistStatus.error
+                  : collectionWhitelistStatus.status === true
+                    ? (collectionWhitelistStatus.standard === 'ERC721'
+                        ? <span style={{ color: 'green', fontWeight: 500 }}>This ERC721 collection is whitelisted</span>
+                        : collectionWhitelistStatus.standard === 'ERC1155'
+                          ? <>
+                              <span style={{ color: 'green', fontWeight: 500 }}>This ERC1155 collection is whitelisted</span><br/>
+                              <span style={{ color: 'orange', fontWeight: 500 }}>Warning: This collection is ERC1155, but this form is for ERC721 collections.</span>
+                            </>
+                          : <span style={{ color: 'orange', fontWeight: 500 }}>This collection is whitelisted but is not ERC721 standard</span>
+                      )
+                    : collectionWhitelistStatus.status === false
+                      ? <span style={{ color: 'red', fontWeight: 500 }}>This collection is not whitelisted!</span>
+                      : ''}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Start Time</label>
@@ -1847,7 +1909,31 @@ function ExistingERC1155DropForm() {
     maxTicketsPerParticipant: '',
     ticketPrice: '',
   });
+  const [collectionWhitelistStatus, setCollectionWhitelistStatus] = useState({ status: null, loading: false, error: null, standard: null });
   const config = useRaffleConfig(true);
+
+  // Check collection whitelist status when collectionAddress changes
+  useEffect(() => {
+    let cancelled = false;
+    async function checkWhitelistAndStandard() {
+      setCollectionWhitelistStatus({ status: null, loading: true, error: null, standard: null });
+      if (!formData.collectionAddress || !contracts.raffleManager || !provider) {
+        setCollectionWhitelistStatus({ status: null, loading: false, error: null, standard: null });
+        return;
+      }
+      try {
+        const [isWhitelisted, standard] = await Promise.all([
+          contracts.raffleManager.isCollectionApproved(formData.collectionAddress),
+          detectCollectionStandard(formData.collectionAddress, provider)
+        ]);
+        if (!cancelled) setCollectionWhitelistStatus({ status: isWhitelisted, loading: false, error: null, standard });
+      } catch (e) {
+        if (!cancelled) setCollectionWhitelistStatus({ status: null, loading: false, error: 'Error checking status', standard: null });
+      }
+    }
+    checkWhitelistAndStandard();
+    return () => { cancelled = true; };
+  }, [formData.collectionAddress, contracts.raffleManager, provider]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -1949,6 +2035,25 @@ function ExistingERC1155DropForm() {
               placeholder="0x..."
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {collectionWhitelistStatus.loading
+                ? 'Checking whitelist status...'
+                : collectionWhitelistStatus.error
+                  ? collectionWhitelistStatus.error
+                  : collectionWhitelistStatus.status === true
+                    ? (collectionWhitelistStatus.standard === 'ERC1155'
+                        ? <span style={{ color: 'green', fontWeight: 500 }}>This ERC1155 collection is whitelisted</span>
+                        : collectionWhitelistStatus.standard === 'ERC721'
+                          ? <>
+                              <span style={{ color: 'green', fontWeight: 500 }}>This ERC721 collection is whitelisted</span><br/>
+                              <span style={{ color: 'orange', fontWeight: 500 }}>Warning: This collection is ERC721, but this form is for ERC1155 collections.</span>
+                            </>
+                          : <span style={{ color: 'orange', fontWeight: 500 }}>This collection is whitelisted but is not ERC1155 standard</span>
+                      )
+                    : collectionWhitelistStatus.status === false
+                      ? <span style={{ color: 'red', fontWeight: 500 }}>This collection is not whitelisted!</span>
+                      : ''}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Prize Token ID</label>
@@ -2290,7 +2395,31 @@ function LuckySaleERC721Form() {
     maxTicketsPerParticipant: '',
     ticketPrice: '',
   });
+  const [collectionWhitelistStatus, setCollectionWhitelistStatus] = useState({ status: null, loading: false, error: null, standard: null });
   const config = useRaffleConfig(true);
+
+  // Check collection whitelist status when collectionAddress changes
+  useEffect(() => {
+    let cancelled = false;
+    async function checkWhitelistAndStandard() {
+      setCollectionWhitelistStatus({ status: null, loading: true, error: null, standard: null });
+      if (!formData.collectionAddress || !contracts.raffleManager || !provider) {
+        setCollectionWhitelistStatus({ status: null, loading: false, error: null, standard: null });
+        return;
+      }
+      try {
+        const [isWhitelisted, standard] = await Promise.all([
+          contracts.raffleManager.isCollectionApproved(formData.collectionAddress),
+          detectCollectionStandard(formData.collectionAddress, provider)
+        ]);
+        if (!cancelled) setCollectionWhitelistStatus({ status: isWhitelisted, loading: false, error: null, standard });
+      } catch (e) {
+        if (!cancelled) setCollectionWhitelistStatus({ status: null, loading: false, error: 'Error checking status', standard: null });
+      }
+    }
+    checkWhitelistAndStandard();
+    return () => { cancelled = true; };
+  }, [formData.collectionAddress, contracts.raffleManager, provider]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -2408,6 +2537,25 @@ function LuckySaleERC721Form() {
               placeholder="0x..."
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {collectionWhitelistStatus.loading
+                ? 'Checking whitelist status...'
+                : collectionWhitelistStatus.error
+                  ? collectionWhitelistStatus.error
+                  : collectionWhitelistStatus.status === true
+                    ? (collectionWhitelistStatus.standard === 'ERC721'
+                        ? <span style={{ color: 'green', fontWeight: 500 }}>This ERC721 collection is whitelisted</span>
+                        : collectionWhitelistStatus.standard === 'ERC1155'
+                          ? <>
+                              <span style={{ color: 'green', fontWeight: 500 }}>This ERC1155 collection is whitelisted</span><br/>
+                              <span style={{ color: 'orange', fontWeight: 500 }}>Warning: This collection is ERC1155, but this form is for ERC721 collections.</span>
+                            </>
+                          : <span style={{ color: 'orange', fontWeight: 500 }}>This collection is whitelisted but is not ERC721 standard</span>
+                      )
+                    : collectionWhitelistStatus.status === false
+                      ? <span style={{ color: 'red', fontWeight: 500 }}>This collection is not whitelisted!</span>
+                      : ''}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Prize Token ID</label>
@@ -2560,7 +2708,31 @@ function LuckySaleERC1155Form() {
     maxTicketsPerParticipant: '',
     ticketPrice: '',
   });
+  const [collectionWhitelistStatus, setCollectionWhitelistStatus] = useState({ status: null, loading: false, error: null, standard: null });
   const config = useRaffleConfig(true);
+
+  // Check collection whitelist status when collectionAddress changes
+  useEffect(() => {
+    let cancelled = false;
+    async function checkWhitelistAndStandard() {
+      setCollectionWhitelistStatus({ status: null, loading: true, error: null, standard: null });
+      if (!formData.collectionAddress || !contracts.raffleManager || !provider) {
+        setCollectionWhitelistStatus({ status: null, loading: false, error: null, standard: null });
+        return;
+      }
+      try {
+        const [isWhitelisted, standard] = await Promise.all([
+          contracts.raffleManager.isCollectionApproved(formData.collectionAddress),
+          detectCollectionStandard(formData.collectionAddress, provider)
+        ]);
+        if (!cancelled) setCollectionWhitelistStatus({ status: isWhitelisted, loading: false, error: null, standard });
+      } catch (e) {
+        if (!cancelled) setCollectionWhitelistStatus({ status: null, loading: false, error: 'Error checking status', standard: null });
+      }
+    }
+    checkWhitelistAndStandard();
+    return () => { cancelled = true; };
+  }, [formData.collectionAddress, contracts.raffleManager, provider]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -2679,6 +2851,25 @@ function LuckySaleERC1155Form() {
               placeholder="0x..."
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {collectionWhitelistStatus.loading
+                ? 'Checking whitelist status...'
+                : collectionWhitelistStatus.error
+                  ? collectionWhitelistStatus.error
+                  : collectionWhitelistStatus.status === true
+                    ? (collectionWhitelistStatus.standard === 'ERC1155'
+                        ? <span style={{ color: 'green', fontWeight: 500 }}>This ERC1155 collection is whitelisted</span>
+                        : collectionWhitelistStatus.standard === 'ERC721'
+                          ? <>
+                              <span style={{ color: 'green', fontWeight: 500 }}>This ERC721 collection is whitelisted</span><br/>
+                              <span style={{ color: 'orange', fontWeight: 500 }}>Warning: This collection is ERC721, but this form is for ERC1155 collections.</span>
+                            </>
+                          : <span style={{ color: 'orange', fontWeight: 500 }}>This collection is whitelisted but is not ERC1155 standard</span>
+                      )
+                    : collectionWhitelistStatus.status === false
+                      ? <span style={{ color: 'red', fontWeight: 500 }}>This collection is not whitelisted!</span>
+                      : ''}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Prize Token ID</label>
@@ -3088,7 +3279,28 @@ function ERC20GiveawayForm() {
     winnersCount: '',
     maxTicketsPerParticipant: ''
   });
+  const [whitelistStatus, setWhitelistStatus] = useState({ status: null, loading: false, error: null });
   const config = useRaffleConfig(true);
+
+  // Check whitelist status when tokenAddress changes
+  useEffect(() => {
+    let cancelled = false;
+    async function checkWhitelist() {
+      setWhitelistStatus({ status: null, loading: true, error: null });
+      if (!formData.tokenAddress || !contracts.raffleManager) {
+        setWhitelistStatus({ status: null, loading: false, error: null });
+        return;
+      }
+      try {
+        const isWhitelisted = await contracts.raffleManager.erc20PrizeWhitelist(formData.tokenAddress);
+        if (!cancelled) setWhitelistStatus({ status: isWhitelisted, loading: false, error: null });
+      } catch (e) {
+        if (!cancelled) setWhitelistStatus({ status: null, loading: false, error: 'Error checking whitelist status' });
+      }
+    }
+    checkWhitelist();
+    return () => { cancelled = true; };
+  }, [formData.tokenAddress, contracts.raffleManager]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -3207,6 +3419,17 @@ function ERC20GiveawayForm() {
               placeholder="0x..."
               required
             />
+            <div className="text-xs text-muted-foreground mt-1">
+              {whitelistStatus.loading
+                ? 'Checking whitelist status...'
+                : whitelistStatus.error
+                  ? whitelistStatus.error
+                  : whitelistStatus.status === true
+                    ? <span style={{ color: 'green', fontWeight: 500 }}>Whitelisted</span>
+                    : whitelistStatus.status === false
+                      ? 'This token is NOT whitelisted for prizes.'
+                      : ''}
+            </div>
           </div>
           <div>
             <label className="block text-base font-medium mb-2">Total Token Amount</label>
