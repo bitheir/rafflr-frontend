@@ -48,10 +48,10 @@ export const SUPPORTED_NETWORKS = {
     rpcUrl: 'https://avalanche-fuji.drpc.org',
     explorer: 'https://testnet.snowscan.xyz',
     contractAddresses: {
-      raffleManager: '0xb11c8482fe4421257A7A1AE79d44DE88F94742BD',
-      raffleDeployer: '0xA90Dc97bA50f72D4F347a705a0F71C16638A9504',
-      revenueManager: '0x568bfd588226Ee18122bDadc6bBD0156AFF2225b',
-      nftFactory: '0x76065c39D0151c51000BbE7BAC60A3999dc51756'
+      raffleManager: '0x76ea083E10F4BcC63191a1c609DB3E59C46e9bBe',
+      raffleDeployer: '0xD08A9598803522b6b7d80963bF94829f68A0441e',
+      revenueManager: '0xF19a11A3F8211bcB9381bFb367cE937c63e7E478',
+      nftFactory: '0x586FE8ADd022B0aafE86Fb42e8d007Cd89bDfE97'
     }
   },
   43114: {
@@ -81,10 +81,10 @@ export const SUPPORTED_NETWORKS = {
     rpcUrl: 'https://base-sepolia-rpc.publicnode.com',
     explorer: 'https://sepolia.basescan.org',
     contractAddresses: {
-      raffleManager: '0x725C70602D1Aa3CB86d70d01EDAB05bcFb079BDF',
-      raffleDeployer: '0x9f1654D63593eEa8fFc9aeD3a5F1254223E03bFd',
-      revenueManager: '0xF86cC501dd23c858447847F1A7f7c71cD4072f90',
-      nftFactory: '0x31ab88FB9BEa068ca5cf747928187cA293a4aA2d'
+      raffleManager: '0xAD93510aCFb38b88B9898AD3cD600C8a3eb741AF',
+      raffleDeployer: '0x1Ef2c682596c74460cF5585Fc886f4C598050286',
+      revenueManager: '0x460Fd5E3CBCD43B0150983114b8f402114D3E28C',
+      nftFactory: '0x99cC5Dd49A4096A461cC8905Dbd519Ac9A83E557'
     }
   },
   11155111: {
@@ -147,10 +147,10 @@ export const SUPPORTED_NETWORKS = {
     rpcUrl: 'https://endpoints.omniatech.io/v1/arbitrum/sepolia/public',
     explorer: 'https://sepolia.arbiscan.io',
     contractAddresses: {
-      raffleManager: '0x5781f5A54A219dC8C4110ECbeEb416611e358521',
-      raffleDeployer: '0x39B33dbb32b6cB8c98544Bd55b2D81D71f800f55',
-      revenueManager: '0x0580c70b58E6E7da17566F1C2661aaeEF4c98541',
-      nftFactory: '0x8394427460e6c843c33CB8bA076E1D0Cadc4012d'
+      raffleManager: '0x6c1b11A6070128A703Fa0a2814243c8cF17Dc28f',
+      raffleDeployer: '0x6D1Cc2eF5e1A49039253b782D0e4772d9b6FA012',
+      revenueManager: '0x34899A2ddF8EA3923964251d967ABFdF0b6af9d2',
+      nftFactory: '0x1B71Ee19F1E9E910dEB53C0bBEcb06d238662C4C'
     }
   },
 }; 

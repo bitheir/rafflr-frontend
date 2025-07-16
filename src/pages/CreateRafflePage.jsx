@@ -1369,97 +1369,102 @@ const NewERC721DropForm = () => {
               placeholder="Leave empty to use protocol default"
             />
           </div>
-          <div>
-            <label className="block text-base font-medium mb-2">Collection Name</label>
-            <input
-              type="text"
-              value={formData.collectionName || ''}
-              onChange={(e) => handleChange('collectionName', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-base font-medium mb-2">Collection Symbol</label>
-            <input
-              type="text"
-              value={formData.collectionSymbol || ''}
-              onChange={(e) => handleChange('collectionSymbol', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-base font-medium mb-2">Base URI</label>
-            <input
-              type="url"
-              value={formData.baseURI || ''}
-              onChange={(e) => handleChange('baseURI', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-base font-medium mb-2">Max Supply</label>
-            <input
-              type="number"
-              value={formData.maxSupply || ''}
-              onChange={(e) => handleChange('maxSupply', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-            />
-          </div>
-          <div>
-            <label className="block text-base font-medium mb-2">Royalty Percentage (%)</label>
-            <input
-              type="number"
-              value={formData.royaltyPercentage || ''}
-              onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-            />
-          </div>
-          <div>
-            <label className="block text-base font-medium mb-2">Reveal Type</label>
-            <Select
-              value={formData.revealType}
-              onValueChange={value => handleChange('revealType', value)}
-              required
-            >
-              <SelectTrigger className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background">
-                <SelectValue placeholder="Select Reveal Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">Instant Reveal</SelectItem>
-                <SelectItem value="1">Manual Reveal</SelectItem>
-                <SelectItem value="2">Scheduled Reveal</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {(formData.revealType === '1' || formData.revealType === '2') && (
+        </div>
+        {/* Inner card for collection info */}
+        <div className="bg-muted/20 border border-border rounded-xl p-6 mt-4">
+          <h4 className="font-semibold text-base mb-4">New Collection Info</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-base font-medium mb-2">Unrevealed Base URI</label>
+              <label className="block text-base font-medium mb-2">Collection Name</label>
+              <input
+                type="text"
+                value={formData.collectionName || ''}
+                onChange={(e) => handleChange('collectionName', e.target.value)}
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium mb-2">Collection Symbol</label>
+              <input
+                type="text"
+                value={formData.collectionSymbol || ''}
+                onChange={(e) => handleChange('collectionSymbol', e.target.value)}
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium mb-2">Base URI</label>
               <input
                 type="url"
-                value={formData.unrevealedBaseURI || ''}
-                onChange={e => handleChange('unrevealedBaseURI', e.target.value)}
+                value={formData.baseURI || ''}
+                onChange={(e) => handleChange('baseURI', e.target.value)}
                 className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-                required={formData.revealType === '1' || formData.revealType === '2'}
+                required
               />
             </div>
-          )}
-          {formData.revealType === '2' && (
             <div>
-              <label className="block text-base font-medium mb-2">Reveal Time</label>
+              <label className="block text-base font-medium mb-2">Max Supply</label>
               <input
-                type="datetime-local"
-                value={formData.revealTime || ''}
-                onChange={e => handleChange('revealTime', e.target.value)}
+                type="number"
+                value={formData.maxSupply || ''}
+                onChange={(e) => handleChange('maxSupply', e.target.value)}
                 className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-                required={formData.revealType === '2'}
               />
             </div>
-          )}
+            <div>
+              <label className="block text-base font-medium mb-2">Royalty Percentage (%)</label>
+              <input
+                type="number"
+                value={formData.royaltyPercentage || ''}
+                onChange={(e) => handleChange('royaltyPercentage', e.target.value)}
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium mb-2">Reveal Type</label>
+              <Select
+                value={formData.revealType}
+                onValueChange={value => handleChange('revealType', value)}
+                required
+              >
+                <SelectTrigger className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background">
+                  <SelectValue placeholder="Select Reveal Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Instant Reveal</SelectItem>
+                  <SelectItem value="1">Manual Reveal</SelectItem>
+                  <SelectItem value="2">Scheduled Reveal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {(formData.revealType === '1' || formData.revealType === '2') && (
+              <div>
+                <label className="block text-base font-medium mb-2">Unrevealed Base URI</label>
+                <input
+                  type="url"
+                  value={formData.unrevealedBaseURI || ''}
+                  onChange={e => handleChange('unrevealedBaseURI', e.target.value)}
+                  className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                  required={formData.revealType === '1' || formData.revealType === '2'}
+                />
+              </div>
+            )}
+            {formData.revealType === '2' && (
+              <div>
+                <label className="block text-base font-medium mb-2">Reveal Time</label>
+                <input
+                  type="datetime-local"
+                  value={formData.revealTime || ''}
+                  onChange={e => handleChange('revealTime', e.target.value)}
+                  className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                  required={formData.revealType === '2'}
+                />
+              </div>
+            )}
+          </div>
         </div>
-        
         {/* Social Media Tasks Toggle */}
         <div className="flex items-center space-x-3">
           <Switch
@@ -1570,17 +1575,17 @@ function ExistingERC721DropForm() {
       };
       const tx = await contracts.raffleDeployer.connect(signer).createRaffle(params);
       await tx.wait();
-      toast.success('Existing ERC721 Collection raffle created successfully!');
-      setFormData({
-        name: '',
-        collection: '',
-        startTime: '',
-        duration: '',
-        ticketLimit: '',
-        winnersCount: '',
-        maxTicketsPerUser: '',
-        ticketPrice: '',
-      });
+        toast.success('Existing ERC721 Collection raffle created successfully!');
+        setFormData({
+          name: '',
+          collection: '',
+          startTime: '',
+          duration: '',
+          ticketLimit: '',
+          winnersCount: '',
+          maxTicketsPerUser: '',
+          ticketPrice: '',
+        });
     } catch (error) {
       console.error('Error creating raffle:', error);
       toast.error(extractRevertReason(error));
@@ -2145,7 +2150,7 @@ const CreateRafflePage = () => {
           </div>
           <div className="lg:col-span-1">
             <div className="w-full max-w-4xl mx-auto">
-              {renderForm()}
+            {renderForm()}
             </div>
           </div>
         </div>
@@ -3436,54 +3441,6 @@ function NewERC1155DropForm() {
             />
           </div>
           <div>
-            <label className="block text-base font-medium mb-2">Collection Name</label>
-            <input
-              type="text"
-              value={formData.collectionName || ''}
-              onChange={e => handleChange('collectionName', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-base font-medium mb-2">Collection Symbol</label>
-            <input
-              type="text"
-              value={formData.collectionSymbol || ''}
-              onChange={e => handleChange('collectionSymbol', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-base font-medium mb-2">Base URI</label>
-            <input
-              type="url"
-              value={formData.baseURI || ''}
-              onChange={e => handleChange('baseURI', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-base font-medium mb-2">Max Supply</label>
-            <input
-              type="number"
-              value={formData.maxSupply || ''}
-              onChange={e => handleChange('maxSupply', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-            />
-          </div>
-          <div>
-            <label className="block text-base font-medium mb-2">Royalty Percentage (%)</label>
-            <input
-              type="number"
-              value={formData.royaltyPercentage || ''}
-              onChange={e => handleChange('royaltyPercentage', e.target.value)}
-              className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-            />
-          </div>
-          <div>
             <label className="block text-base font-medium mb-2">Prize Token ID</label>
             <input
               type="number"
@@ -3503,48 +3460,103 @@ function NewERC1155DropForm() {
               required
             />
           </div>
-          <div>
-            <label className="block text-base font-medium mb-2">Reveal Type</label>
-            <Select
-              value={formData.revealType}
-              onValueChange={value => handleChange('revealType', value)}
-              required
-            >
-              <SelectTrigger className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background">
-                <SelectValue placeholder="Select Reveal Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">Instant Reveal</SelectItem>
-                <SelectItem value="1">Manual Reveal</SelectItem>
-                <SelectItem value="2">Scheduled Reveal</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {(formData.revealType === '1' || formData.revealType === '2') && (
+        </div>
+        {/* Inner card for collection info */}
+        <div className="bg-muted/20 border border-border rounded-xl p-6 mt-4">
+          <h4 className="font-semibold text-base mb-4">New Collection Info</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-base font-medium mb-2">Unrevealed Base URI</label>
+              <label className="block text-base font-medium mb-2">Collection Name</label>
+              <input
+                type="text"
+                value={formData.collectionName || ''}
+                onChange={e => handleChange('collectionName', e.target.value)}
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium mb-2">Collection Symbol</label>
+              <input
+                type="text"
+                value={formData.collectionSymbol || ''}
+                onChange={e => handleChange('collectionSymbol', e.target.value)}
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium mb-2">Base URI</label>
               <input
                 type="url"
-                value={formData.unrevealedBaseURI || ''}
-                onChange={e => handleChange('unrevealedBaseURI', e.target.value)}
+                value={formData.baseURI || ''}
+                onChange={e => handleChange('baseURI', e.target.value)}
                 className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-                required={formData.revealType === '1' || formData.revealType === '2'}
+                required
               />
             </div>
-          )}
-          {formData.revealType === '2' && (
             <div>
-              <label className="block text-base font-medium mb-2">Reveal Time</label>
+              <label className="block text-base font-medium mb-2">Max Supply</label>
               <input
-                type="datetime-local"
-                value={formData.revealTime || ''}
-                onChange={e => handleChange('revealTime', e.target.value)}
+                type="number"
+                value={formData.maxSupply || ''}
+                onChange={e => handleChange('maxSupply', e.target.value)}
                 className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
-                required={formData.revealType === '2'}
               />
             </div>
-          )}
+            <div>
+              <label className="block text-base font-medium mb-2">Royalty Percentage (%)</label>
+              <input
+                type="number"
+                value={formData.royaltyPercentage || ''}
+                onChange={e => handleChange('royaltyPercentage', e.target.value)}
+                className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+              />
+            </div>
+            <div>
+              <label className="block text-base font-medium mb-2">Reveal Type</label>
+              <Select
+                value={formData.revealType}
+                onValueChange={value => handleChange('revealType', value)}
+                required
+              >
+                <SelectTrigger className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background">
+                  <SelectValue placeholder="Select Reveal Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Instant Reveal</SelectItem>
+                  <SelectItem value="1">Manual Reveal</SelectItem>
+                  <SelectItem value="2">Scheduled Reveal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {(formData.revealType === '1' || formData.revealType === '2') && (
+              <div>
+                <label className="block text-base font-medium mb-2">Unrevealed Base URI</label>
+                <input
+                  type="url"
+                  value={formData.unrevealedBaseURI || ''}
+                  onChange={e => handleChange('unrevealedBaseURI', e.target.value)}
+                  className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                  required={formData.revealType === '1' || formData.revealType === '2'}
+                />
+              </div>
+            )}
+            {formData.revealType === '2' && (
+              <div>
+                <label className="block text-base font-medium mb-2">Reveal Time</label>
+                <input
+                  type="datetime-local"
+                  value={formData.revealTime || ''}
+                  onChange={e => handleChange('revealTime', e.target.value)}
+                  className="w-full px-3 py-2.5 text-base border border-border rounded-lg bg-background"
+                  required={formData.revealType === '2'}
+                />
+              </div>
+            )}
+          </div>
         </div>
+        {/* Social Media Tasks Toggle */}
         <div className="flex items-center space-x-3">
           <Switch
             id="enable-social-tasks"

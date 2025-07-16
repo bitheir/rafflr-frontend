@@ -279,12 +279,14 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
   };
 
   const canClaimRefund = () => {
-    // Only for completed raffles, prized raffles, not whitelist, user is eligible, and not already claimed
+    // Allow refund claim if:
+    // 1. Raffle is prized (not whitelist)
+    // 2. State is Completed, All Prizes Claimed, or Unengaged
+    // 3. User has refundable amount > 0
     return (
       raffle.isPrized &&
-      (raffle.stateNum === 4 || raffle.stateNum === 7) &&
+      (raffle.stateNum === 4 || raffle.stateNum === 7 || raffle.stateNum === 8) &&
       refundableAmount && refundableAmount.gt && refundableAmount.gt(0)
-      // Add any additional checks if needed
     );
   };
 
@@ -339,7 +341,7 @@ const TicketPurchaseSection = ({ raffle, onPurchase, timeRemaining, winners, sho
           </div>
 
         {/* Button/message area */}
-        {(raffle.stateNum === 4 || raffle.stateNum === 7) ? (
+        {(raffle.stateNum === 4 || raffle.stateNum === 7 || raffle.stateNum === 8) ? (
           (canClaimPrize() || canClaimRefund()) ? (
             <div className="flex flex-col sm:flex-row gap-2 w-full">
               {canClaimPrize() && (
